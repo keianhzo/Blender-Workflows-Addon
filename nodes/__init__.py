@@ -1,5 +1,5 @@
 
-from . import transforms, inputs, outputs, filters
+from . import transforms, inputs, outputs, filters, debug
 import bpy
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
@@ -31,13 +31,19 @@ WF_CATEGORIES = [
         NodeItem("WFNodeJoinObjects"),
         NodeItem("WFNodeTranslateToPosition"),
         NodeItem("WFNodeTranslateToObjectPosition"),
+        NodeItem("WFNodeSetActiveUVMap"),
     ]),
     WFCategory("WORKFLOWS_Filters", "Filters", items=[
         NodeItem("WFNodeFilterStartsWith"),
         NodeItem("WFNodeFilterEndsWith"),
         NodeItem("WFNodeFilterContains"),
         NodeItem("WFNodeFilterRegex"),
-        NodeItem("WFNodeMerge"),
+        NodeItem("WFNodeCombineSets"),
+        NodeItem("WFNodeRemoveFromSet"),
+    ]),
+    WFCategory("WORKFLOWS_Debug", "Debug", items=[
+        NodeItem("WFNodePrintObjectNames"),
+        NodeItem("WFNodeDryRun"),
     ])
 ]
 
@@ -50,32 +56,47 @@ class RunWorkflowOperator(bpy.types.Operator):
     @classmethod
     def description(cls, context, properties):
         node = context.target
-        if node.filepath:
+        if hasattr(node, "filepath") and node.filepath:
             return "Runs this workflow"
         return "The file path must be set to run this workflow"
 
     @classmethod
     def poll(cls, context: Context):
         node = context.target
-        if node.filepath:
-            return True
-        return False
+        if hasattr(node, "filepath"):
+            if node.filepath:
+                return True
+            return False
+        
+        return True
 
     def execute(self, context):
+        original_undo_steps = bpy.context.preferences.edit.undo_steps
+        bpy.context.preferences.edit.undo_steps = 1000
+
         try:
             node = context.target
-            node.execute()
+            node.execute(context)
 
-            return {'FINISHED'}
+            node_tree = context.space_data.node_tree
+            from .mixins import WFNode
+            for node in node_tree.nodes:
+                if isinstance(node, WFNode):
+                    node.cleanup()
+
+            result = {'FINISHED'}
 
         except Exception as err:
             traceback.print_exc()
 
-            return {'CANCELLED'}
+            result = {'CANCELLED'}
 
         finally:
             bpy.ops.ed.undo_push(message='Workflow executed')
             bpy.ops.ed.undo()
+            bpy.context.preferences.edit.undo_steps = original_undo_steps
+
+        return result
 
 
 CLASSES = [
@@ -89,16 +110,18 @@ CLASSES = [
     transforms.WFNodeApplyAllModifiers,
     transforms.WFNodeAddPrefixToName,
     transforms.WFNodeAddSuffixToName,
-    transforms.AddObjectSocketOperator,
-    transforms.RemoveObjectSocketOperator,
     transforms.WFNodeJoinObjects,
     transforms.WFNodeTranslateToPosition,
     transforms.WFNodeTranslateToObjectPosition,
+    transforms.WFNodeSetActiveUVMap,
     filters.WFNodeFilterStartsWith,
     filters.WFNodeFilterEndsWith,
     filters.WFNodeFilterContains,
     filters.WFNodeFilterRegex,
-    filters.WFNodeMerge,
+    filters.WFNodeCombineSets,
+    filters.WFNodeRemoveFromSet,
+    debug.WFNodePrintObjectNames,
+    debug.WFNodeDryRun,
 ]
 
 

@@ -5,13 +5,15 @@ from ..consts import IO_COLOR, ERROR_COLOR
 
 class WFNodeExportGLTF(WFExportNode):
     bl_label = "Export glTF"
+    bl_description = """Exports the input objects to a glTF file. The file path extension (.gltf or .glb) will be used to choose the output type.
+    - in: One or more objects sets"""
     bl_width_default = 300
 
     def init(self, context):
         super().init(context)
 
-    def execute(self) -> list[bpy.types.Object]:
-        obs = super().execute()
+    def execute(self, context) -> set[bpy.types.Object]:
+        obs = super().execute(context)
 
         # Deselect all objects first
         bpy.ops.object.select_all(action='DESELECT')
@@ -23,10 +25,12 @@ class WFNodeExportGLTF(WFExportNode):
         # Optionally, make one of the objects active (usually the last one)
         if obs:
             last_ob = obs[-1]
-            bpy.context.view_layer.objects.active = last_ob
+            context.view_layer.objects.active = last_ob
 
-        from ..utils import export_scene
-        export_scene(self.filepath)
+        from ..utils import export_scene_gltf
+        export_scene_gltf(context, self.filepath)
+
+        return obs
 
     def update(self):
         if self.filepath:

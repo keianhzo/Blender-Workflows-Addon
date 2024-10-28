@@ -62,15 +62,15 @@ def get_prefs():
     return bpy.context.preferences.addons[__package__].preferences
 
 
-def export_scene(path):
+def export_scene_gltf(context, path):
     import os
     args = {
         # Settings from "Remember Export Settings"
-        **dict(bpy.context.scene.get('glTF2ExportSettings', {})),
+        **dict(context.scene.get('glTF2ExportSettings', {})),
 
         'export_format': ('GLB' if path.endswith('.glb') else 'GLTF_SEPARATE'),
 
-        'filepath': path,
+        'filepath': bpy.path.abspath(path),
         'use_selection': True,
         'use_visible': False,
         'use_renderable': False,
@@ -81,3 +81,15 @@ def export_scene(path):
         args['use_active_scene'] = True
 
     bpy.ops.export_scene.gltf(**args)
+
+# Function to recursively search for the LayerCollection containing the object
+def find_object_layer_collection(layer_collection, obj):
+    # Check if the object is in this collection
+    if obj.name in layer_collection.collection.objects:
+        return layer_collection
+    # Recursively search in child LayerCollections
+    for child in layer_collection.children:
+        found = find_object_layer_collection(child, obj)
+        if found:
+            return found
+    return None

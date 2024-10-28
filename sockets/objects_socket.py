@@ -1,6 +1,44 @@
 import bpy
 from bpy.types import NodeSocketStandard
 
+class AddObjectSocketOperator(bpy.types.Operator):
+    bl_idname = "wf.add_object_socket"
+    bl_label = "Add Object Socket"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return "Adds a new object socket to the node"
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        node = context.node
+        node.inputs.new("WFObjectsSocket", "in")
+        return {'FINISHED'}
+
+
+class RemoveObjectSocketOperator(bpy.types.Operator):
+    bl_idname = "wf.remove_object_socket"
+    bl_label = "Remove Object Socket"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def description(cls, context, properties):
+        return "Removes the last added socket from the node"
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        node = context.node
+        if len(node.inputs) > 1:
+            node.inputs.remove(node.inputs[len(node.inputs) - 1])
+        return {'FINISHED'}
+    
 
 class WFObjectsSocket(NodeSocketStandard):
     bl_idname = "WFObjectsSocket"
@@ -11,11 +49,12 @@ class WFObjectsSocket(NodeSocketStandard):
             layout.alignment = 'RIGHT' if self.is_output else 'LEFT'
             layout.label(text=self.name)
 
-            if not self.is_output and self == self.node.inputs[len(self.node.inputs) - 1]:
+            if not self.is_output:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
-                row.operator("wf.add_object_socket", icon='ADD', text="")
-                if len(self.node.inputs) > 1:
+                if self == self.node.inputs[0]:
+                    row.operator("wf.add_object_socket", icon='ADD', text="")
+                else:
                     row.operator("wf.remove_object_socket", icon='REMOVE', text="")
 
         def draw_color(self, context):
@@ -25,11 +64,12 @@ class WFObjectsSocket(NodeSocketStandard):
             layout.alignment = 'RIGHT' if self.is_output else 'LEFT'
             layout.label(text=self.name)
 
-            if not self.is_output and self == self.node.inputs[len(self.node.inputs) - 1]:
+            if not self.is_output:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
-                row.operator("wf.add_object_socket", icon='ADD', text="")
-                if len(self.node.inputs) > 1:
+                if self == self.node.inputs[0]:
+                    row.operator("wf.add_object_socket", icon='ADD', text="")
+                else:
                     row.operator("wf.remove_object_socket", icon='REMOVE', text="")
 
         def draw_color(self, context, node):

@@ -1,11 +1,12 @@
 import bpy
-from bpy.types import Node
-from ..consts import IO_COLOR, FILTER_COLOR, ERROR_COLOR
+from bpy.types import Node, NodeReroute
+from ..consts import IO_COLOR, FILTER_COLOR, ERROR_COLOR, DEBUG_COLOR
 
 
 class WFNode():
     bl_label = "Workflows Graph Node"
     bl_icon = "NODE"
+    cached_data = []
 
     @classmethod
     def poll(cls, ntree):
@@ -13,35 +14,64 @@ class WFNode():
 
     def init(self, context):
         self.use_custom_color = True
+        self.cached_data = []
 
     def draw_buttons(self, context, layout):
         pass
 
-    def get_input_data(self) -> list[bpy.types.Object]:
+    def get_input_socket_data(self, in_socket, context) -> list[bpy.types.Object]:
+        obs = []
+
+        if in_socket and in_socket.is_linked:
+            link = in_socket.links[0]
+            upstream_node = link.from_socket.node
+            if isinstance(upstream_node, WFNode):
+                obs = upstream_node.get_input_data(context)
+            elif isinstance(upstream_node, NodeReroute):
+                for i in range(0, len(upstream_node.inputs)):
+                    obs.extend(self.get_input_data(upstream_node.inputs[i], context))
+            
+        return obs
+
+    def get_input_data(self, context) -> list[bpy.types.Object]:
         obs = []
 
         for i in range(0, len(self.inputs)):
-            in_socket = self.inputs[i]
-            if in_socket.is_linked:
-                link = in_socket.links[0]
-                upstream_node = link.from_socket.node
-                obs.extend(upstream_node.get_input_data())
+            data = self.get_input_socket_data(self.inputs[i], context)
+            obs.extend(data)
 
         return obs
-
-    def execute(self) -> list[bpy.types.Object]:
+    
+    def execute_input_socket(self, in_socket, context) -> list[bpy.types.Object]:
         obs = []
 
-        for i in range(0, len(self.inputs)):
-            in_socket = self.inputs[i]
-            if in_socket.is_linked:
-                link = in_socket.links[0]
-                upstream_node = link.from_socket.node
-                upstream_data = upstream_node.execute()
-                upstream_data = [ob for ob in upstream_data if ob not in obs]
-                obs.extend(upstream_data)
+        if in_socket and in_socket.is_linked:
+            link = in_socket.links[0]
+            upstream_node = link.from_socket.node
+            if isinstance(upstream_node, WFNode):
+                obs = upstream_node.execute(context)
+            elif isinstance(upstream_node, NodeReroute):
+                for i in range(0, len(upstream_node.inputs)):
+                    obs.extend(self.execute_input_socket(upstream_node.inputs[i], context))
 
         return obs
+
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = []
+
+        if self.cached_data:
+            obs = self.cached_data
+        else:
+            for i in range(0, len(self.inputs)):
+                data = self.execute_input_socket(self.inputs[i], context)
+                obs.extend(data)
+
+            self.cached_data = obs
+
+        return list(set(obs))
+    
+    def cleanup(self):
+        self["cached_data"] = []
 
 
 class WFActionNode(WFNode, Node):
@@ -83,6 +113,12 @@ class WFOutputNode(WFNode, Node):
     def init(self, context):
         super().init(context)
         self.color = IO_COLOR
+
+class WFDebugNode(WFActionNode):
+
+    def init(self, context):
+        super().init(context)
+        self.color = DEBUG_COLOR
 
 
 class WFExportNode(WFOutputNode):

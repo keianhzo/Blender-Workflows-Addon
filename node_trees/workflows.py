@@ -43,7 +43,8 @@ class WFNodeTree(NodeTree):
 
 class RunAllWorkflowsOperator(bpy.types.Operator):
     bl_idname = "wf.run_all_workflows"
-    bl_label = "Run Workflow"
+    bl_label = "Run All Workflows"
+    bl_description = "Runs all the workflows in the current workflow tree"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -61,15 +62,23 @@ class RunAllWorkflowsOperator(bpy.types.Operator):
     def execute(self, context):
         try:
             node_tree = context.space_data.node_tree
-            from ..utils import export_scene
+            from ..nodes.mixins import WFOutputNode
             for node in node_tree.nodes:
-                print(node.name)
+                if isinstance(node, WFOutputNode):
+                    node.execute(context)
 
-            return {'FINISHED'}
+            result = {'FINISHED'}
 
         except Exception as err:
             traceback.print_exc()
-            return {'CANCELLED'}
+
+            result = {'CANCELLED'}
+
+        finally:
+            bpy.ops.ed.undo_push(message='Workflow executed')
+            bpy.ops.ed.undo()
+
+        return result
 
 
 class WF_PT_GraphPanel(bpy.types.Panel):
@@ -83,7 +92,7 @@ class WF_PT_GraphPanel(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
         col = row.column(align=True)
-        col.operator(RunAllWorkflowsOperator.bl_idname, text="Run Workflow")
+        col.operator(RunAllWorkflowsOperator.bl_idname)
 
 
 def register():

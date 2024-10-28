@@ -2,6 +2,8 @@ from . import enum_socket, flow_socket, objects_socket
 import bpy
 
 CLASSES = [
+    objects_socket.AddObjectSocketOperator,
+    objects_socket.RemoveObjectSocketOperator,
     objects_socket.WFObjectsSocket,
     enum_socket.WFEnumSocketChoice,
     enum_socket.WFEnumSocket,
