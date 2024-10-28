@@ -82,6 +82,23 @@ def export_scene_gltf(context, path):
 
     bpy.ops.export_scene.gltf(**args)
 
+
+def export_scene_fbx(context, path):
+    import os
+    args = {
+        # TODO: Add support for FBX presets selection"
+
+        'filepath': bpy.path.abspath(path),
+        'use_selection': True,
+        'use_visible': False,
+        'use_active_collection': False,
+        'use_mesh_modifiers': False,
+        'use_mesh_modifiers_render': False,
+    }
+
+    bpy.ops.export_scene.fbx(**args)
+
+
 # Function to recursively search for the LayerCollection containing the object
 def find_object_layer_collection(layer_collection, obj):
     # Check if the object is in this collection

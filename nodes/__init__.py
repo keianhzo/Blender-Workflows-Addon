@@ -21,6 +21,7 @@ WF_CATEGORIES = [
     ]),
     WFCategory("WORKFLOWS_Output", "Output", items=[
         NodeItem("WFNodeExportGLTF"),
+        NodeItem("WFNodeExportFBX"),
     ]),
     WFCategory("WORKFLOWS_Transforms", "Transforms", items=[
         NodeItem("WFNodeApplyModifierType"),
@@ -105,6 +106,7 @@ CLASSES = [
     inputs.WFNodeObjectInput,
     inputs.WFNodeCollectionInput,
     outputs.WFNodeExportGLTF,
+    outputs.WFNodeExportFBX,
     transforms.WFNodeApplyModifierType,
     transforms.WFNodeApplyModifierName,
     transforms.WFNodeApplyAllModifiers,
