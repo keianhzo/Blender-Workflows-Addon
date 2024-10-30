@@ -1,5 +1,5 @@
 import bpy
-from .mixins import WFActionNode
+from .mixins import WFTransformNode
 from ..consts import TRANSFORM_COLOR, ERROR_COLOR
 
 
@@ -29,7 +29,7 @@ def get_modifiers_types(self, context):
     return mods
 
 
-class WFNodeApplyModifierType(WFActionNode):
+class WFNodeApplyModifierType(WFTransformNode):
     bl_label = "Apply Modifier By Type"
     bl_description = """Applies the selected modifier to an object
     - in: One or more objects sets
@@ -49,17 +49,13 @@ Note: "Make single user" is applied on the object data before applying the modif
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
         self.mods_types_store = []
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "modifier")
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
-        return super().get_input_data(context)
-
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
+        obs = self.get_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "modifiers") and ob.modifiers:
@@ -99,7 +95,7 @@ def get_modifiers_names(self, context):
     return mods
 
 
-class WFNodeApplyModifierName(WFActionNode):
+class WFNodeApplyModifierName(WFTransformNode):
     bl_label = "Apply Modifier By Name"
     bl_description = """Applies the selected modifier to an object
     - in: One or more objects sets
@@ -118,17 +114,13 @@ This node won't work correctly with upstream nodes that change the object set li
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
         self.mods_names_store = []
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "modifier")
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
-        return super().get_input_data(context)
-
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "modifiers") and ob.modifiers:
@@ -142,7 +134,7 @@ This node won't work correctly with upstream nodes that change the object set li
         return obs
 
 
-class WFNodeApplyAllModifiers(WFActionNode):
+class WFNodeApplyAllModifiers(WFTransformNode):
     bl_label = "Apply All Modifiers"
     bl_description = """Applies all modifiers to an object
     - in: One or more objects sets
@@ -151,10 +143,9 @@ Note: "Make single user" is applied on the object data before applying the modif
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "modifiers") and ob.modifiers:
@@ -174,7 +165,7 @@ def string_update(self, string):
         self.color = ERROR_COLOR
 
 
-class WFNodeAddPrefixToName(WFActionNode):
+class WFNodeAddPrefixToName(WFTransformNode):
     bl_label = "Add Prefix To Objects Names"
     bl_description = """Adds a prefix to the beginning of an object's name
     - in: One or more objects sets
@@ -190,13 +181,12 @@ class WFNodeAddPrefixToName(WFActionNode):
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "prefix")
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         for ob in obs:
             ob.name = self.prefix + ob.name
@@ -206,7 +196,7 @@ class WFNodeAddPrefixToName(WFActionNode):
         return obs
 
 
-class WFNodeAddSuffixToName(WFActionNode):
+class WFNodeAddSuffixToName(WFTransformNode):
     bl_label = "Add Suffix To Objects Names"
     bl_description = """Adds a suffix to the end of an object's name
     - in: One or more objects sets
@@ -222,13 +212,12 @@ class WFNodeAddSuffixToName(WFActionNode):
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "suffix")
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         for ob in obs:
             ob.name = ob.name + self.suffix
@@ -238,16 +227,16 @@ class WFNodeAddSuffixToName(WFActionNode):
         return obs
 
 
-class WFNodeJoinObjects(WFActionNode):
-    bl_label = "⚠️ Join Objects Geometry"
+class WFNodeJoinObjects(WFTransformNode):
+    bl_label = "Join Objects Geometry"
     bl_description = """Joins several meshes geometry and optionally renames the output object
     - name: The name to use for the joined object
     - in: One or more objects sets
     - out: The resulting object set
-Note: Only meshes are joined all other objects are ignore."""
+Note: Only meshes are joined all other objects are ignored"""
     bl_width_default = 160
 
-    name: bpy.props.StringProperty(
+    rename: bpy.props.StringProperty(
         name="Name",
         description="New Object Name",
         default="",
@@ -256,15 +245,14 @@ Note: Only meshes are joined all other objects are ignore."""
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
 
-        layout.prop(self, "name")
+        layout.prop(self, "rename")
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = set(super().execute(context))
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = set(self.get_input_data(context))
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -278,24 +266,27 @@ Note: Only meshes are joined all other objects are ignore."""
                 print(f"Error: object {ob.name} doesn't have an active layer collection")
             ob.select_set(True)
 
+        last_ob = None
         if obs:
             meshes = [ob for ob in obs if ob.type == 'MESH']
             if meshes:
                 last_ob = meshes[-1]
 
-        context.view_layer.objects.active = last_ob
-        bpy.ops.object.join()
-        last_ob.name = self.name
-        if hasattr(ob, "data") and ob.data:
-            last_ob.data.name = self.name
+        if last_ob:
+            context.view_layer.objects.active = last_ob
+            bpy.ops.object.join()
+            if self.rename:
+                last_ob.name = self.rename
+                if hasattr(ob, "data") and ob.data:
+                    last_ob.data.name = self.rename
 
-        obs -= set(meshes)
-        obs.add(last_ob)
+            obs -= set(meshes)
+            obs.add(last_ob)
 
         return list(obs)
 
 
-class WFNodeTranslateToPosition(WFActionNode):
+class WFNodeTranslateToPosition(WFTransformNode):
     bl_label = "Translate To Position"
     bl_description = """Translates an object to a new position. The position can be in world or local space
     - in: One or more objects sets
@@ -311,7 +302,6 @@ class WFNodeTranslateToPosition(WFActionNode):
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "relative")
@@ -321,8 +311,8 @@ class WFNodeTranslateToPosition(WFActionNode):
         col.prop(self, "position", index=1, text="Y")
         col.prop(self, "position", index=2, text="Z")
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -342,7 +332,7 @@ class WFNodeTranslateToPosition(WFActionNode):
         return [last_ob]
 
 
-class WFNodeTranslateToObjectPosition(WFActionNode):
+class WFNodeTranslateToObjectPosition(WFTransformNode):
     bl_label = "Translate To Object Position"
     bl_description = """Translates an object to another object's position
     - in: One or more objects sets
@@ -355,14 +345,13 @@ class WFNodeTranslateToObjectPosition(WFActionNode):
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
         layout.prop(self, "target")
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -377,7 +366,8 @@ class WFNodeTranslateToObjectPosition(WFActionNode):
         last_ob.matrix_world.translation = self.target.matrix_world.translation
 
         return [last_ob]
-    
+
+
 def get_uv_maps(self, context):
     uvs = set()
 
@@ -403,7 +393,8 @@ def get_uv_maps(self, context):
 
     return uvs
 
-class WFNodeSetActiveUVMap(WFActionNode):
+
+class WFNodeSetActiveUVMap(WFTransformNode):
     bl_label = "Sets Active UV Map"
     bl_description = """Changes the active uv map to the one selected for all input objects
     - uvmap: The UVMap to set as active
@@ -423,15 +414,14 @@ Note: If the UV map doesn't exist in the object, the uv map is not changed"""
 
     def init(self, context):
         super().init(context)
-        self.color = TRANSFORM_COLOR
         self.uv_maps_store = []
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
         layout.prop(self, "uv_map")
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "data") and ob.data:

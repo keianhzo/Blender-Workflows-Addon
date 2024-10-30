@@ -53,19 +53,29 @@ class RunAllWorkflowsOperator(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context: Context):
-        node_tree = context.space_data.node_tree
+        node_tree = bpy.context.space_data.node_tree
         for node in node_tree.nodes:
             if node.bl_idname in INPUT_NODES:
                 return True
         return False
 
     def execute(self, context):
+        original_undo_steps = bpy.context.preferences.edit.undo_steps
+        bpy.context.preferences.edit.undo_steps = 1000
+
         try:
             node_tree = context.space_data.node_tree
-            from ..nodes.mixins import WFOutputNode
+            from ..nodes.mixins import WFRunNode
+            from ..nodes import execute_node
             for node in node_tree.nodes:
-                if isinstance(node, WFOutputNode):
-                    node.execute(context)
+                if isinstance(node, WFRunNode):
+                    execute_node(node, context)
+
+                    from ..sockets.flow_socket import WFFlowSocket
+                    node_tree = context.space_data.node_tree
+                    for node in node_tree.nodes:
+                        if isinstance(node, WFFlowSocket):
+                            node.cleanup()
 
             result = {'FINISHED'}
 
@@ -77,6 +87,7 @@ class RunAllWorkflowsOperator(bpy.types.Operator):
         finally:
             bpy.ops.ed.undo_push(message='Workflow executed')
             bpy.ops.ed.undo()
+            bpy.context.preferences.edit.undo_steps = original_undo_steps
 
         return result
 

@@ -31,12 +31,9 @@ class WFNodeFilterStartsWith(WFFilterNode):
         super().draw_buttons(context, layout)
         layout.prop(self, "filter")
 
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
-        obs = [ob for ob in obs if ob.name.startswith(self.filter)]
-
-        return obs
+    def get_input_data(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
+        return [ob for ob in obs if ob.name.startswith(self.filter)]
 
 
 class WFNodeFilterEndsWith(WFFilterNode):
@@ -59,12 +56,9 @@ class WFNodeFilterEndsWith(WFFilterNode):
     def draw_buttons(self, context, layout):
         layout.prop(self, "filter")
 
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
-        obs = [ob for ob in obs if ob.name.endswith(self.filter)]
-
-        return obs
+    def get_input_data(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
+        return [ob for ob in obs if ob.name.endswith(self.filter)]
 
 
 class WFNodeFilterContains(WFFilterNode):
@@ -89,12 +83,9 @@ class WFNodeFilterContains(WFFilterNode):
         super().draw_buttons(context, layout)
         layout.prop(self, "filter")
 
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
-        obs = [ob for ob in obs if ob.name in self.filter]
-
-        return obs
+    def get_input_data(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
+        return [ob for ob in obs if ob.name in self.filter]
 
 
 class WFNodeFilterRegex(WFFilterNode):
@@ -118,13 +109,10 @@ class WFNodeFilterRegex(WFFilterNode):
         super().draw_buttons(context, layout)
         layout.prop(self, "filter")
 
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
+    def get_input_data(self, context) -> list[bpy.types.Object]:
         import re
-        obs = [ob for ob in obs if re. search(self.filter, ob.name)]
-
-        return obs
+        obs = self.get_input_data(context)
+        return [ob for ob in obs if re.search(self.filter, ob.name)]
 
 
 class WFNodeCombineSets(WFFilterNode):
@@ -136,14 +124,7 @@ class WFNodeCombineSets(WFFilterNode):
     def init(self, context):
         super().init(context)
 
-    def draw_buttons(self, context, layout):
-        super().draw_buttons(context, layout)
 
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
-        return obs
-    
 class WFNodeRemoveFromSet(WFFilterNode):
     bl_label = "Remove From Set"
     bl_description = """Removes the given input objects from the first input set
@@ -156,23 +137,17 @@ class WFNodeRemoveFromSet(WFFilterNode):
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
 
-    def execute(self, context) -> list[bpy.types.Object]:
+    def get_input_data(self, context) -> list[bpy.types.Object]:
         obs = set()
+        if len(self.inputs) > 0:
+            data = self.get_input_socket_data(self.inputs[0], context)
+            obs.update(data)
 
-        if self.cached_data:
-            obs = self.cached_data
-        else:
-            if len(self.inputs) > 0:
-                data = self.execute_input_socket(self.inputs[0], context)
-                obs.update(data)
+            excl = set()
+            if len(self.inputs) > 1:
+                for i in range(1, len(self.inputs)):
+                    data = self.get_input_socket_data(self.inputs[i], context)
+                    excl.update(data)
 
-                excl = set()
-                if len(self.inputs) > 1:
-                    for i in range(1, len(self.inputs)):
-                        data = self.execute_input_socket(self.inputs[i], context)
-                        excl.update(data)
-
-                    obs -= excl
-                    self.cached_data = obs
-
+                obs -= excl
         return list(obs)

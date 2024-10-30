@@ -110,3 +110,17 @@ def find_object_layer_collection(layer_collection, obj):
         if found:
             return found
     return None
+
+
+def ensure_object_layer_active(ob, context):
+    vlc = bpy.context.view_layer.layer_collection
+    lc = find_object_layer_collection(vlc, ob)
+    if lc:
+        lc.exclude = False
+    else:
+        print(f"Error: object {ob.name} doesn't have an active layer collection")
+
+
+def ensure_objects_layer_active(obs, context):
+    for ob in obs:
+        ensure_object_layer_active(ob, context)

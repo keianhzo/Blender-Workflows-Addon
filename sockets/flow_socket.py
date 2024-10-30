@@ -21,8 +21,8 @@ class WFFlowSocket(NodeSocketStandard):
     def create(cls, target, name="flow"):
         socket = target.new(cls.bl_rna.name, name)
         socket.display_shape = "DIAMOND"
-        socket.link_limit = 1
+        socket.link_limit = 0
         # if socket.is_output:
-        #     socket.link_limit = 1
-        # else:
         #     socket.link_limit = 0
+        # else:
+        #     socket.link_limit = 1

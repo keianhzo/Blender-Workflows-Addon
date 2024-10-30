@@ -12,8 +12,8 @@ class WFNodeExportGLTF(WFExportNode):
     def init(self, context):
         super().init(context)
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -45,8 +45,8 @@ class WFNodeExportFBX(WFExportNode):
     def init(self, context):
         super().init(context)
 
-    def execute(self, context) -> set[bpy.types.Object]:
-        obs = super().execute(context)
+    def execute(self, context) -> list[bpy.types.Object]:
+        obs = self.get_input_data(context)
 
         bpy.ops.object.select_all(action='DESELECT')
 

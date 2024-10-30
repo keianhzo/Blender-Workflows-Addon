@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import NodeSocketStandard
 
+
 class AddObjectSocketOperator(bpy.types.Operator):
     bl_idname = "wf.add_object_socket"
     bl_label = "Add Object Socket"
@@ -38,7 +39,19 @@ class RemoveObjectSocketOperator(bpy.types.Operator):
         if len(node.inputs) > 1:
             node.inputs.remove(node.inputs[len(node.inputs) - 1])
         return {'FINISHED'}
-    
+
+
+def has_prev_transforms(node):
+    has_prev_transform = False
+    from ..sockets.flow_socket import WFFlowSocket
+    if len(node.inputs) > 0 and isinstance(node.inputs[0], WFFlowSocket):
+        from ..nodes.mixins import WFTransformNode
+        for link in node.inputs[0].links:
+            if isinstance(link.from_socket.node, WFTransformNode):
+                has_prev_transform = True
+
+    return has_prev_transform
+
 
 class WFObjectsSocket(NodeSocketStandard):
     bl_idname = "WFObjectsSocket"
@@ -52,7 +65,9 @@ class WFObjectsSocket(NodeSocketStandard):
             if not self.is_output:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
-                if self == self.node.inputs[0]:
+                from ..nodes.mixins import WFFunctionNode
+                start_index = 0 if isinstance(self.node, WFFunctionNode) else 1
+                if len(self.node.inputs) > start_index and self == self.node.inputs[start_index]:
                     row.operator("wf.add_object_socket", icon='ADD', text="")
                 else:
                     row.operator("wf.remove_object_socket", icon='REMOVE', text="")
@@ -67,10 +82,20 @@ class WFObjectsSocket(NodeSocketStandard):
             if not self.is_output:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
-                if self == self.node.inputs[0]:
+                from ..nodes.mixins import WFFunctionNode
+                start_index = 0 if isinstance(self.node, WFFunctionNode) else 1
+                if len(self.node.inputs) > start_index and self == self.node.inputs[start_index]:
                     row.operator("wf.add_object_socket", icon='ADD', text="")
                 else:
                     row.operator("wf.remove_object_socket", icon='REMOVE', text="")
 
         def draw_color(self, context, node):
-            return (0.2, 1.0, 0.2, 1.0)
+            output_color = (0.2, 1.0, 0.2, 1.0)
+
+            from ..nodes.mixins import WFInputNode
+            if has_prev_transforms(
+                    self.node) and self.is_linked and isinstance(
+                    self.links[0].from_socket.node, WFInputNode):
+                output_color = (1.0, 0.0, 0.0, 1.0)
+
+            return output_color
