@@ -62,7 +62,7 @@ class WFObjectsSocket(NodeSocketStandard):
             layout.alignment = 'RIGHT' if self.is_output else 'LEFT'
             layout.label(text=self.name)
 
-            if not self.is_output:
+            if not self.is_output and self.node.bl_idname not in ["NodeGroupInput", "NodeGroupOutput", "WFNodeGroup"]:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
                 from ..nodes.mixins import WFFunctionNode
@@ -79,7 +79,7 @@ class WFObjectsSocket(NodeSocketStandard):
             layout.alignment = 'RIGHT' if self.is_output else 'LEFT'
             layout.label(text=self.name)
 
-            if not self.is_output:
+            if not self.is_output and self.node.bl_idname not in ["NodeGroupInput", "NodeGroupOutput", "WFNodeGroup"]:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
                 from ..nodes.mixins import WFFunctionNode

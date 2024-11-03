@@ -1,5 +1,5 @@
 
-from . import export, transforms, inputs, filters, debug, run
+from . import export, transforms, inputs, filters, debug, run, group
 import bpy
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
@@ -165,6 +165,8 @@ CLASSES = [
 
 
 def register():
+    group.register()
+
     for cls in CLASSES:
         bpy.utils.register_class(cls)
 
@@ -176,3 +178,5 @@ def unregister():
 
     for cls in CLASSES:
         bpy.utils.unregister_class(cls)
+
+    group.unregister()

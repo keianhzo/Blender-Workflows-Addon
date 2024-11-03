@@ -6,7 +6,7 @@ from ..consts import TRANSFORM_COLOR, ERROR_COLOR
 def get_modifiers_types(self, context):
     mods = set()
 
-    obs = self.get_input_data(context)
+    obs = self.get_object_input_data(context)
     for ob in obs:
         if hasattr(ob, "modifiers") and ob.modifiers:
             for mod in ob.modifiers:
@@ -55,7 +55,7 @@ Note: "Make single user" is applied on the object data before applying the modif
         layout.prop(self, "modifier")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "modifiers") and ob.modifiers:
@@ -72,7 +72,7 @@ Note: "Make single user" is applied on the object data before applying the modif
 def get_modifiers_names(self, context):
     mods = set()
 
-    obs = self.get_input_data(context)
+    obs = self.get_object_input_data(context)
     for ob in obs:
         if hasattr(ob, "modifiers") and ob.modifiers:
             for mod in ob.modifiers:
@@ -120,7 +120,7 @@ This node won't work correctly with upstream nodes that change the object set li
         layout.prop(self, "modifier")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "modifiers") and ob.modifiers:
@@ -145,7 +145,7 @@ Note: "Make single user" is applied on the object data before applying the modif
         super().init(context)
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "modifiers") and ob.modifiers:
@@ -186,7 +186,7 @@ class WFNodeAddPrefixToName(WFTransformNode):
         layout.prop(self, "prefix")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         for ob in obs:
             ob.name = self.prefix + ob.name
@@ -217,7 +217,7 @@ class WFNodeAddSuffixToName(WFTransformNode):
         layout.prop(self, "suffix")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         for ob in obs:
             ob.name = ob.name + self.suffix
@@ -252,7 +252,7 @@ Note: Only meshes are joined all other objects are ignored"""
         layout.prop(self, "rename")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = set(self.get_input_data(context))
+        obs = set(self.get_object_input_data(context))
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -312,7 +312,7 @@ class WFNodeTranslateToPosition(WFTransformNode):
         col.prop(self, "position", index=2, text="Z")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -351,7 +351,7 @@ class WFNodeTranslateToObjectPosition(WFTransformNode):
         layout.prop(self, "target")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -371,7 +371,7 @@ class WFNodeTranslateToObjectPosition(WFTransformNode):
 def get_uv_maps(self, context):
     uvs = set()
 
-    obs = self.get_input_data(context)
+    obs = self.get_object_input_data(context)
     for ob in obs:
         if hasattr(ob, "data") and ob.data:
             for uv in ob.data.uv_layers:
@@ -421,7 +421,7 @@ Note: If the UV map doesn't exist in the object, the uv map is not changed"""
         layout.prop(self, "uv_map")
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         for ob in obs:
             if hasattr(ob, "data") and ob.data:

@@ -7,7 +7,7 @@ CLASSES = [
     objects_socket.WFObjectsSocket,
     enum_socket.WFEnumSocketChoice,
     enum_socket.WFEnumSocket,
-    flow_socket.WFFlowSocket
+    flow_socket.WFFlowSocket,
 ]
 
 
