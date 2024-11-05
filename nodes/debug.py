@@ -13,7 +13,7 @@ class WFNodePrintObjectNames(WFDebugNode):
         super().init(context)
 
     def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+        obs = self.get_object_input_data(context)
 
         for ob in obs:
             print(ob.name)
@@ -29,4 +29,4 @@ class WFNodeDryRun(WFInFlowNode):
     def init(self, context):
         super().init(context)
         self.color = IO_COLOR
-        self.inputs.new("WFObjectsSocket", "in")
+        self.inputs.new("WFObjectsSocket", "objects")

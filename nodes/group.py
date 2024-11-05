@@ -86,6 +86,7 @@ class WFGroupNodesOperator(Operator):
     """Create a node group from the selected nodes"""
     bl_idname = "wf.group_nodes"
     bl_label = "Group Workflow Nodes"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
@@ -166,50 +167,40 @@ class WFGroupNodesOperator(Operator):
         if nodes_count > 0:
             bpy.ops.node.clipboard_paste()
 
-        # Create the group node tree input/output sockets
-        # This will create the group node sockets on update. See WFNodeGroup.update
+        # Create the group node tree input/output sockets and attache links
+        # node_group.interface.new_socket will create the group_node sockets on update.
+        # # See WFNodeGroup.update
         for link in external_links["inputs"]:
             link_node = node_group.nodes[link.to_node.name]
             node_input = link_node.inputs[link.to_socket.name]
 
             node_group.interface.new_socket(
-                name=link.to_socket.name, description=link.to_socket.identifier, in_out="INPUT",
+                name=link.to_socket.name, in_out="INPUT",
                 socket_type=link.to_socket.bl_idname)
+            node_group.links.new(group_input_node.outputs[link.to_socket.name], node_input)
+
+            base_node_tree.links.new(
+                link.from_node.outputs[link.from_socket.name],
+                group_node.inputs[link.to_socket.name]
+            )
 
         for link in external_links["outputs"]:
             link_node = node_group.nodes[link.from_node.name]
             node_output = link_node.outputs[link.from_socket.name]
 
             node_group.interface.new_socket(
-                name=link.from_socket.name, description=link.from_socket.identifier, in_out="OUTPUT",
+                name=link.from_socket.name, in_out="OUTPUT",
                 socket_type=link.from_socket.bl_idname)
+            node_group.links.new(node_output, group_output_node.inputs[link.from_socket.name])
 
-        # Reattach all the links to group inputs and outputs.
-        for x, link in enumerate(external_links["inputs"]):
             base_node_tree.links.new(
-                link.from_node.outputs[link.from_socket.name],
-                group_node.inputs[x]
-            )
-
-            link_node = node_group.nodes[link.to_node.name]
-            node_input = link_node.inputs[x]
-            node_group.links.new(group_input_node.outputs[x], node_input)
-
-        for x, link in enumerate(external_links["outputs"]):
-            base_node_tree.links.new(
-                group_node.outputs[x],
+                group_node.outputs[link.from_socket.name],
                 link.to_node.inputs[link.to_socket.name]
             )
-
-            link_node = node_group.nodes[link.from_node.name]
-            node_output = link_node.outputs[x]
-            node_group.links.new(node_output, group_output_node.inputs[x])
 
         # Remove the original nodes from the base node tree since they've been copied into the group.
         for node in selected_nodes:
             base_node_tree.nodes.remove(node)
-
-        # bpy.ops.node.view_all()
 
         return {'FINISHED'}
 
@@ -218,6 +209,7 @@ class WFToggleEditGroupOperator(Operator):
     """Create a node group from the selected nodes"""
     bl_idname = "wf.toggle_edit_group"
     bl_label = "Toggle Workflow Group"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):

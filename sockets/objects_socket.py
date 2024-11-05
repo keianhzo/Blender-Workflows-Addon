@@ -7,6 +7,8 @@ class AddObjectSocketOperator(bpy.types.Operator):
     bl_label = "Add Object Socket"
     bl_options = {'REGISTER', 'UNDO'}
 
+    extensible: bpy.props.BoolProperty(default=False)
+
     @classmethod
     def description(cls, context, properties):
         return "Adds a new object socket to the node"
@@ -17,7 +19,8 @@ class AddObjectSocketOperator(bpy.types.Operator):
 
     def execute(self, context):
         node = context.node
-        node.inputs.new("WFObjectsSocket", "in")
+        socket = node.inputs.new("WFObjectsSocket", "objects")
+        socket.extensible = self.extensible
         return {'FINISHED'}
 
 
@@ -57,18 +60,21 @@ class WFObjectsSocket(NodeSocketStandard):
     bl_idname = "WFObjectsSocket"
     bl_label = "Workflows Objects"
 
+    extensible: bpy.props.BoolProperty(default=False)
+
     if bpy.app.version < (4, 0, 0):
         def draw(self, context, layout):
             layout.alignment = 'RIGHT' if self.is_output else 'LEFT'
             layout.label(text=self.name)
 
-            if not self.is_output and self.node.bl_idname not in ["NodeGroupInput", "NodeGroupOutput", "WFNodeGroup"]:
+            if self.extensible and not self.is_output:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
                 from ..nodes.mixins import WFFunctionNode
                 start_index = 0 if isinstance(self.node, WFFunctionNode) else 1
                 if len(self.node.inputs) > start_index and self == self.node.inputs[start_index]:
-                    row.operator("wf.add_object_socket", icon='ADD', text="")
+                    op = row.operator("wf.add_object_socket", icon='ADD', text="")
+                    op.extensible = self.extensible
                 else:
                     row.operator("wf.remove_object_socket", icon='REMOVE', text="")
 
@@ -79,23 +85,24 @@ class WFObjectsSocket(NodeSocketStandard):
             layout.alignment = 'RIGHT' if self.is_output else 'LEFT'
             layout.label(text=self.name)
 
-            if not self.is_output and self.node.bl_idname not in ["NodeGroupInput", "NodeGroupOutput", "WFNodeGroup"]:
+            if self.extensible and not self.is_output:
                 row = layout.row()
                 row.context_pointer_set("node", self.node)
                 from ..nodes.mixins import WFFunctionNode
                 start_index = 0 if isinstance(self.node, WFFunctionNode) else 1
                 if len(self.node.inputs) > start_index and self == self.node.inputs[start_index]:
-                    row.operator("wf.add_object_socket", icon='ADD', text="")
+                    op = row.operator("wf.add_object_socket", icon='ADD', text="")
+                    op.extensible = self.extensible
                 else:
                     row.operator("wf.remove_object_socket", icon='REMOVE', text="")
 
         def draw_color(self, context, node):
             output_color = (0.2, 1.0, 0.2, 1.0)
 
-            from ..nodes.mixins import WFInputNode
-            if has_prev_transforms(
-                    self.node) and self.is_linked and isinstance(
-                    self.links[0].from_socket.node, WFInputNode):
-                output_color = (1.0, 0.0, 0.0, 1.0)
+            # from ..nodes.mixins import WFInputNode
+            # if has_prev_transforms(
+            #         self.node) and self.is_linked and isinstance(
+            #         self.links[0].from_socket.node, WFInputNode):
+            #     output_color = (1.0, 0.0, 0.0, 1.0)
 
             return output_color

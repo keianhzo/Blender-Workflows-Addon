@@ -31,8 +31,8 @@ class WFNodeFilterStartsWith(WFFilterNode):
         super().draw_buttons(context, layout)
         layout.prop(self, "filter")
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
+        obs = super().get_object_input_data(context)
         return [ob for ob in obs if ob.name.startswith(self.filter)]
 
 
@@ -56,8 +56,8 @@ class WFNodeFilterEndsWith(WFFilterNode):
     def draw_buttons(self, context, layout):
         layout.prop(self, "filter")
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
+        obs = super().get_object_input_data(context)
         return [ob for ob in obs if ob.name.endswith(self.filter)]
 
 
@@ -83,8 +83,8 @@ class WFNodeFilterContains(WFFilterNode):
         super().draw_buttons(context, layout)
         layout.prop(self, "filter")
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
+        obs = super().get_object_input_data(context)
         return [ob for ob in obs if ob.name in self.filter]
 
 
@@ -109,9 +109,9 @@ class WFNodeFilterRegex(WFFilterNode):
         super().draw_buttons(context, layout)
         layout.prop(self, "filter")
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
         import re
-        obs = self.get_input_data(context)
+        obs = super().get_object_input_data(context)
         return [ob for ob in obs if re.search(self.filter, ob.name)]
 
 
@@ -123,6 +123,18 @@ class WFNodeCombineSets(WFFilterNode):
 
     def init(self, context):
         super().init(context)
+        self.inputs[0].extensible = True
+        socket = self.inputs.new("WFObjectsSocket", "objects")
+        socket.extensible = True
+
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
+        obs = set()
+
+        for socket in self.inputs:
+            data = super().get_input_socket_data(socket, context)
+            obs.update(data)
+
+        return list(obs)
 
 
 class WFNodeRemoveFromSet(WFFilterNode):
@@ -133,11 +145,14 @@ class WFNodeRemoveFromSet(WFFilterNode):
 
     def init(self, context):
         super().init(context)
+        self.inputs[0].extensible = True
+        socket = self.inputs.new("WFObjectsSocket", "objects")
+        socket.extensible = True
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
         obs = set()
         if len(self.inputs) > 0:
             data = self.get_input_socket_data(self.inputs[0], context)

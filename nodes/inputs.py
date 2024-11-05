@@ -28,14 +28,14 @@ class WFNodeSceneInput(WFInputNode):
             from ..consts import ERROR_COLOR
             self.color = ERROR_COLOR
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
         if self.target:
             return self.target.objects.values()
 
         return []
 
     def execute(self, context) -> list[bpy.types.Object]:
-        return self.get_input_data(context)
+        return self.get_object_input_data(context)
 
 
 def on_collection_update(self, context):
@@ -64,7 +64,7 @@ class WFNodeCollectionInput(WFInputNode):
             from ..consts import ERROR_COLOR
             self.color = ERROR_COLOR
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
         def get_collection_objects(col):
             obs = []
             obs.extend(col.objects.values())
@@ -77,7 +77,7 @@ class WFNodeCollectionInput(WFInputNode):
             return list(set(get_collection_objects(self.target)))
 
     def execute(self, context) -> list[bpy.types.Object]:
-        return self.get_input_data(context)
+        return self.get_object_input_data(context)
 
 
 def on_object_update(self, context):
@@ -114,7 +114,7 @@ class WFNodeObjectInput(WFInputNode):
             from ..consts import ERROR_COLOR
             self.color = ERROR_COLOR
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
+    def get_object_input_data(self, context) -> list[bpy.types.Object]:
         obs = [self.target]
 
         if self.children:
@@ -124,4 +124,4 @@ class WFNodeObjectInput(WFInputNode):
         return obs
 
     def execute(self, context) -> list[bpy.types.Object]:
-        return self.get_input_data(context)
+        return self.get_object_input_data(context)

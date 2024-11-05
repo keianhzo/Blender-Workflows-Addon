@@ -3,36 +3,60 @@ from bpy.types import Node, NodeReroute, NodeGroupInput, NodeGroupOutput
 from ..consts import IO_COLOR, FILTER_COLOR, ERROR_COLOR, DEBUG_COLOR, FUNCTION_COLOR, FLOW_COLOR, TRANSFORM_COLOR
 
 
-def get_object_input_socket_data(socket, context) -> list:
-    obs = []
-
+def get_input_socket_data(socket, context, group_nodes=[]) -> list:
+    from .group import WFNodeGroup
     if socket and socket.is_linked:
         link = socket.links[0]
+        # TODO handle from_socket_node being a NodeGroupInput/Output
         upstream_node = link.from_socket.node
-        if isinstance(upstream_node, WFNode):
+        from ..sockets.objects_socket import WFObjectsSocket
+        if isinstance(upstream_node, WFNode) and isinstance(socket, WFObjectsSocket):
             # For function nodes pulling its output data triggers execution
             if isinstance(upstream_node, WFFunctionNode):
-                obs = upstream_node.execute(context)
+                return upstream_node.execute(context)
             # For Flow nodes the execution must be explicit through a flow socket
             # so we just get whatever was cached from the last execution if any
             else:
-                obs = upstream_node["cached_data"]
+                return [item.ob for item in upstream_node.cache]
+
         elif isinstance(upstream_node, NodeReroute):
             for i in range(0, len(upstream_node.inputs)):
-                obs.extend(get_object_input_socket_data(upstream_node.inputs[i], context))
+                return get_input_socket_data(upstream_node.inputs[i], context), group_nodes
+
         elif isinstance(upstream_node, NodeGroupInput):
-            node_tree = context.space_data.node_tree
-            from .group import WFNodeGroup
-            from ..sockets.objects_socket import WFObjectsSocket
-            for node in node_tree.nodes:
-                if isinstance(node, WFNodeGroup) and node.node_tree == socket.node.id_data and socket in socket.node.inputs.values():
-                    idx = socket.node.inputs.values().index(socket)
-                    if idx < len(
-                            node.inputs) and isinstance(
-                            node.inputs[idx],
-                            WFObjectsSocket) and node.inputs[idx].is_linked:
-                        obs.extend(get_object_input_socket_data(node.inputs[idx], context))
-    return obs
+            if len(group_nodes) > 0:
+                group_node = group_nodes.pop()
+                object_socket = next(
+                    (group_socket for group_socket in group_node.inputs if group_socket.name == socket.name),
+                    None)
+                return get_input_socket_data(object_socket, context, group_nodes)
+
+        elif isinstance(upstream_node, NodeGroupOutput):
+            input_socket = next(
+                (input_socket for input_socket in upstream_node.inputs if upstream_node.name == socket.name),
+                None)
+            if input_socket and input_socket.is_linked:
+                link = input_socket.links[0]
+                return get_input_socket_data(link.from_socket, context, group_nodes)
+
+        elif isinstance(upstream_node, WFNodeGroup):
+            output_node = next((tree_node for tree_node in upstream_node.node_tree.nodes
+                                if isinstance(tree_node, NodeGroupOutput)),
+                               None)
+
+            if output_node:
+                object_socket = next(
+                    (output_socket for output_socket in output_node.inputs if output_socket.name == socket.name),
+                    None)
+                if object_socket:
+                    group_nodes.append(upstream_node)
+                    return get_input_socket_data(object_socket, context, group_nodes)
+
+        else:
+            return None
+
+    else:
+        return socket.default_value if socket else None
 
 
 class WFNode():
@@ -49,8 +73,8 @@ class WFNode():
     def draw_buttons(self, context, layout):
         pass
 
-    def get_object_input_socket_data(self, socket, context) -> list[bpy.types.Object]:
-        return get_object_input_socket_data(socket, context)
+    def get_input_socket_data(self, socket, context) -> list[bpy.types.Object]:
+        return get_input_socket_data(socket, context)
 
     def get_object_input_data(self, context) -> list[bpy.types.Object]:
         return []
@@ -59,23 +83,27 @@ class WFNode():
         return []
 
 
+class ObjectsCache(bpy.types.PropertyGroup):
+    ob: bpy.props.PointerProperty(type=bpy.types.Object)
+
+
 class WFFlowNode(WFNode, Node):
+
+    cache: bpy.props.CollectionProperty(type=ObjectsCache)
 
     def init(self, context):
         super().init(context)
         self.color = FLOW_COLOR
-        self["cached_data"] = []
 
     def get_object_input_data(self, context) -> list[bpy.types.Object]:
-        obs = []
+        from ..sockets.objects_socket import WFObjectsSocket
+        objects_socket = next((socket for socket in self.inputs
+                               if isinstance(socket, WFObjectsSocket)), None)
 
-        for i in range(1, len(self.inputs)):
-            obs.extend(get_object_input_socket_data(self.inputs[i], context))
-
-        return obs
+        return get_input_socket_data(objects_socket, context) or []
 
     def cleanup(self):
-        self["cached_data"] = []
+        self.cache.clear()
 
 
 class WFInFlowNode(WFFlowNode):
@@ -117,7 +145,7 @@ class WFRunNode(WFOutFlowNode):
         self.color = IO_COLOR
 
     def draw_buttons(self, context, layout):
-        op = layout.operator("wf.run_workflow_step", icon='PLAY', text="")
+        op = layout.operator("wf.run_workflow", icon='PLAY', text="")
         op.node_name = self.name
 
 
@@ -130,12 +158,14 @@ These are most often used for mathematical operators, or for queries of context 
         self.color = FUNCTION_COLOR
 
     def get_object_input_data(self, context) -> list[bpy.types.Object]:
-        obs = []
+        from ..sockets.objects_socket import WFObjectsSocket
+        objects_socket = next((socket for socket in self.inputs
+                               if isinstance(socket, WFObjectsSocket)), None)
 
-        for i in range(0, len(self.inputs)):
-            obs.extend(get_object_input_socket_data(self.inputs[i], context))
+        if objects_socket:
+            return get_input_socket_data(objects_socket, context)
 
-        return obs
+        return []
 
     def execute(self, context) -> list[bpy.types.Object]:
         return self.get_object_input_data(context)
@@ -144,20 +174,20 @@ These are most often used for mathematical operators, or for queries of context 
 class WFInFunctionNode(WFFunctionNode):
     def init(self, context):
         super().init(context)
-        self.inputs.new("WFObjectsSocket", "in")
+        self.inputs.new("WFObjectsSocket", "objects")
 
 
 class WFOutFunctionNode(WFFunctionNode):
     def init(self, context):
         super().init(context)
-        self.outputs.new("WFObjectsSocket", "out")
+        self.outputs.new("WFObjectsSocket", "objects")
 
 
 class WFInOutFunctionNode(WFFunctionNode):
     def init(self, context):
         super().init(context)
-        self.inputs.new("WFObjectsSocket", "in")
-        self.outputs.new("WFObjectsSocket", "out")
+        self.inputs.new("WFObjectsSocket", "objects")
+        self.outputs.new("WFObjectsSocket", "objects")
 
 
 class WFInputNode(WFOutFunctionNode):
@@ -181,8 +211,8 @@ class WFDebugNode(WFInOutFlowNode):
     def init(self, context):
         super().init(context)
         self.color = DEBUG_COLOR
-        self.inputs.new("WFObjectsSocket", "in")
-        self.outputs.new("WFObjectsSocket", "out")
+        self.inputs.new("WFObjectsSocket", "objects")
+        self.outputs.new("WFObjectsSocket", "objects")
 
 
 def filepath_update(self, filepath):
@@ -205,7 +235,7 @@ class WFExportNode(WFInFlowNode):
     def init(self, context):
         super().init(context)
         self.color = IO_COLOR
-        self.inputs.new("WFObjectsSocket", "in")
+        self.inputs.new("WFObjectsSocket", "objects")
 
     def draw_buttons(self, context, layout):
         layout.label(text="Default export properties will be used")
@@ -217,5 +247,22 @@ class WFTransformNode(WFInOutFlowNode):
     def init(self, context):
         super().init(context)
         self.color = TRANSFORM_COLOR
-        self.inputs.new("WFObjectsSocket", "in")
-        self.outputs.new("WFObjectsSocket", "out")
+        self.inputs.new("WFObjectsSocket", "objects")
+        self.outputs.new("WFObjectsSocket", "objects")
+
+
+CLASSES = [
+    ObjectsCache,
+    WFFlowNode,
+    WFFunctionNode
+]
+
+
+def register():
+    for cls in CLASSES:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in CLASSES:
+        bpy.utils.unregister_class(cls)

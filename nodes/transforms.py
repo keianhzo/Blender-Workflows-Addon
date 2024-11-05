@@ -4,29 +4,7 @@ from ..consts import TRANSFORM_COLOR, ERROR_COLOR
 
 
 def get_modifiers_types(self, context):
-    mods = set()
-
-    obs = self.get_object_input_data(context)
-    for ob in obs:
-        if hasattr(ob, "modifiers") and ob.modifiers:
-            for mod in ob.modifiers:
-                maxid = -1
-                id = -1
-                found = False
-                for idrec in self.mods_types_store:
-                    id = idrec[0]
-                    if id > maxid:
-                        maxid = id
-                    if idrec[1] == mod.type:
-                        found = True
-                        break
-
-                if not found:
-                    self.mods_types_store.append((maxid+1, mod.type))
-
-                mods.add((mod.type, mod.type, mod.type, id))
-
-    return mods
+    return [(item.identifier, item.name, item.name) for item in bpy.types.Modifier.bl_rna.properties['type'].enum_items]
 
 
 class WFNodeApplyModifierType(WFTransformNode):
@@ -45,11 +23,8 @@ Note: "Make single user" is applied on the object data before applying the modif
         default=0
     )
 
-    mods_types_store = []
-
     def init(self, context):
         super().init(context)
-        self.mods_types_store = []
 
     def draw_buttons(self, context, layout):
         layout.prop(self, "modifier")
@@ -69,32 +44,6 @@ Note: "Make single user" is applied on the object data before applying the modif
         return obs
 
 
-def get_modifiers_names(self, context):
-    mods = set()
-
-    obs = self.get_object_input_data(context)
-    for ob in obs:
-        if hasattr(ob, "modifiers") and ob.modifiers:
-            for mod in ob.modifiers:
-                maxid = -1
-                id = -1
-                found = False
-                for idrec in self.mods_names_store:
-                    id = idrec[0]
-                    if id > maxid:
-                        maxid = id
-                    if idrec[1] == mod.name:
-                        found = True
-                        break
-
-                if not found:
-                    self.mods_names_store.append((maxid+1, mod.name))
-
-                mods.add((mod.name, mod.name, mod.name, id))
-
-    return mods
-
-
 class WFNodeApplyModifierName(WFTransformNode):
     bl_label = "Apply Modifier By Name"
     bl_description = """Applies the selected modifier to an object
@@ -102,30 +51,21 @@ class WFNodeApplyModifierName(WFTransformNode):
     - out: All input objects
 Note: "Make single user" is applied on the object data before applying the modifier
 This node won't work correctly with upstream nodes that change the object set like filter nodes"""
-
-    modifier: bpy.props.EnumProperty(
-        name="",
-        description="Modifier",
-        items=get_modifiers_names,
-        default=0
-    )
-
-    mods_names_store = []
+    bl_width_default = 200
 
     def init(self, context):
         super().init(context)
-        self.mods_names_store = []
-
-    def draw_buttons(self, context, layout):
-        layout.prop(self, "modifier")
+        self.inputs.new("NodeSocketString", "name")
 
     def execute(self, context) -> list[bpy.types.Object]:
         obs = self.get_object_input_data(context)
 
+        from .mixins import get_input_socket_data
         for ob in obs:
             if hasattr(ob, "modifiers") and ob.modifiers:
                 for mod in ob.modifiers:
-                    if mod.name in self.modifier:
+                    name = get_input_socket_data(self.inputs["name"], context)
+                    if mod.name == name:
                         ob.select_set(True)
                         context.view_layer.objects.active = ob
                         bpy.ops.object.make_single_user(type='SELECTED_OBJECTS', object=True, obdata=True)
@@ -172,24 +112,20 @@ class WFNodeAddPrefixToName(WFTransformNode):
     - out: All input objects"""
     bl_width_default = 200
 
-    prefix: bpy.props.StringProperty(
-        name="Prefix",
-        description="String to prepend",
-        default="",
-        update=string_update
-    )
-
     def init(self, context):
         super().init(context)
+        self.inputs.new("NodeSocketString", "prefix")
 
     def draw_buttons(self, context, layout):
-        layout.prop(self, "prefix")
+        super().draw_buttons(context, layout)
 
     def execute(self, context) -> list[bpy.types.Object]:
         obs = self.get_object_input_data(context)
 
+        from .mixins import get_input_socket_data
+        prefix = get_input_socket_data(self.inputs["prefix"], context)
         for ob in obs:
-            ob.name = self.prefix + ob.name
+            ob.name = prefix + ob.name
             if hasattr(ob, "data") and ob.data:
                 ob.data.name = ob.name
 
@@ -203,24 +139,20 @@ class WFNodeAddSuffixToName(WFTransformNode):
     - out: All input objects"""
     bl_width_default = 200
 
-    suffix: bpy.props.StringProperty(
-        name="Suffix",
-        description="String to append",
-        default="",
-        update=string_update
-    )
-
     def init(self, context):
         super().init(context)
+        self.inputs.new("NodeSocketString", "suffix")
 
     def draw_buttons(self, context, layout):
-        layout.prop(self, "suffix")
+        super().draw_buttons(context, layout)
 
     def execute(self, context) -> list[bpy.types.Object]:
         obs = self.get_object_input_data(context)
 
+        from .mixins import get_input_socket_data
+        suffix = get_input_socket_data(self.inputs["suffix"], context)
         for ob in obs:
-            ob.name = ob.name + self.suffix
+            ob.name = ob.name + suffix
             if hasattr(ob, "data") and ob.data:
                 ob.data.name = ob.name
 
@@ -236,20 +168,12 @@ class WFNodeJoinObjects(WFTransformNode):
 Note: Only meshes are joined all other objects are ignored"""
     bl_width_default = 160
 
-    rename: bpy.props.StringProperty(
-        name="Name",
-        description="New Object Name",
-        default="",
-        update=string_update
-    )
-
     def init(self, context):
         super().init(context)
+        self.inputs.new("NodeSocketString", "name")
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
-
-        layout.prop(self, "rename")
 
     def execute(self, context) -> list[bpy.types.Object]:
         obs = set(self.get_object_input_data(context))
@@ -275,10 +199,12 @@ Note: Only meshes are joined all other objects are ignored"""
         if last_ob:
             context.view_layer.objects.active = last_ob
             bpy.ops.object.join()
-            if self.rename:
-                last_ob.name = self.rename
+            from .mixins import get_input_socket_data
+            name = get_input_socket_data(self.inputs["name"], context)
+            if name:
+                last_ob.name = name
                 if hasattr(ob, "data") and ob.data:
-                    last_ob.data.name = self.rename
+                    last_ob.data.name = name
 
             obs -= set(meshes)
             obs.add(last_ob)
@@ -368,65 +294,31 @@ class WFNodeTranslateToObjectPosition(WFTransformNode):
         return [last_ob]
 
 
-def get_uv_maps(self, context):
-    uvs = set()
-
-    obs = self.get_object_input_data(context)
-    for ob in obs:
-        if hasattr(ob, "data") and ob.data:
-            for uv in ob.data.uv_layers:
-                maxid = -1
-                id = -1
-                found = False
-                for idrec in self.uv_maps_store:
-                    id = idrec[0]
-                    if id > maxid:
-                        maxid = id
-                    if idrec[1] == uv.name:
-                        found = True
-                        break
-
-                if not found:
-                    self.uv_maps_store.append((maxid+1, uv.name))
-
-                uvs.add((uv.name, uv.name, uv.name, id))
-
-    return uvs
-
-
 class WFNodeSetActiveUVMap(WFTransformNode):
     bl_label = "Sets Active UV Map"
     bl_description = """Changes the active uv map to the one selected for all input objects
-    - uvmap: The UVMap to set as active
+    - name: The UVMap to set as active
     - in: One or more objects sets
     - out: All input objects
 Note: If the UV map doesn't exist in the object, the uv map is not changed"""
     bl_width_default = 160
 
-    uv_map: bpy.props.EnumProperty(
-        name="UVMap",
-        description="UVMap to set active",
-        items=get_uv_maps,
-        default=0
-    )
-
-    uv_maps_store = []
-
     def init(self, context):
         super().init(context)
-        self.uv_maps_store = []
+        self.inputs.new("NodeSocketString", "name")
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
-        layout.prop(self, "uv_map")
 
     def execute(self, context) -> list[bpy.types.Object]:
         obs = self.get_object_input_data(context)
 
+        from .mixins import get_input_socket_data
         for ob in obs:
             if hasattr(ob, "data") and ob.data:
                 for uv in ob.data.uv_layers:
-                    if uv.name in self.uv_map:
+                    uv_map = get_input_socket_data(self.inputs["name"], context)
+                    if uv.name in uv_map:
                         uv.active = True
 
         return obs
