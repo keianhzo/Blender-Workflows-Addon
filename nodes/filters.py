@@ -17,26 +17,16 @@ class WFNodeFilterStartsWith(WFFilterNode):
     - out: The objects whose name starts with the given string"""
     bl_width_default = 200
 
-    filter: bpy.props.StringProperty(
-        name="Starts With",
-        description="String to filter",
-        default="",
-        update=filter_update
-    )
-
     def init(self, context):
         super().init(context)
+        self.inputs.new("NodeSocketString", "filter")
 
-    def draw_buttons(self, context, layout):
-        super().draw_buttons(context, layout)
-        layout.prop(self, "filter")
-
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
-        obs = [ob for ob in obs if ob.name.startswith(self.filter)]
-
-        return obs
+    def execute(self, context):
+        from .mixins import get_input_socket_data, set_output_socket_data
+        obs = get_input_socket_data(self.inputs["objects"], context)
+        filter = get_input_socket_data(self.inputs["filter"], context)
+        obs = [ob for ob in obs if ob.name.startswith(filter)]
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
 
 class WFNodeFilterEndsWith(WFFilterNode):
@@ -46,25 +36,16 @@ class WFNodeFilterEndsWith(WFFilterNode):
     - out: The objects whose name ends with the given string"""
     bl_width_default = 300
 
-    filter: bpy.props.StringProperty(
-        name="Ends With",
-        description="String to filter",
-        default="",
-        update=filter_update
-    )
-
     def init(self, context):
         super().init(context)
+        self.inputs.new("NodeSocketString", "filter")
 
-    def draw_buttons(self, context, layout):
-        layout.prop(self, "filter")
-
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
-        obs = [ob for ob in obs if ob.name.endswith(self.filter)]
-
-        return obs
+    def execute(self, context):
+        from .mixins import get_input_socket_data, set_output_socket_data
+        obs = get_input_socket_data(self.inputs["objects"], context)
+        filter = get_input_socket_data(self.inputs["filter"], context)
+        obs = [ob for ob in obs if ob.name.endswith(filter)]
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
 
 class WFNodeFilterContains(WFFilterNode):
@@ -74,27 +55,16 @@ class WFNodeFilterContains(WFFilterNode):
     - out: The objects whose name contains the given string"""
     bl_width_default = 200
 
-    filter: bpy.props.StringProperty(
-        name="Contains",
-        description="String to filter",
-        default="",
-        update=filter_update
-    )
-
     def init(self, context):
         super().init(context)
-        self.outputs.new("WFObjectsSocket", "out")
+        self.inputs.new("NodeSocketString", "filter")
 
-    def draw_buttons(self, context, layout):
-        super().draw_buttons(context, layout)
-        layout.prop(self, "filter")
-
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
-        obs = [ob for ob in obs if ob.name in self.filter]
-
-        return obs
+    def execute(self, context):
+        from .mixins import get_input_socket_data, set_output_socket_data
+        obs = get_input_socket_data(self.inputs["objects"], context)
+        filter = get_input_socket_data(self.inputs["filter"], context)
+        obs = [ob for ob in obs if ob.name in filter]
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
 
 class WFNodeFilterRegex(WFFilterNode):
@@ -104,27 +74,17 @@ class WFNodeFilterRegex(WFFilterNode):
     - out: The objects whose name matches the given regular expression"""
     bl_width_default = 200
 
-    filter: bpy.props.StringProperty(
-        name="Regex",
-        description="String to filter",
-        default="",
-        update=filter_update
-    )
-
     def init(self, context):
         super().init(context)
+        self.inputs.new("NodeSocketString", "filter")
 
-    def draw_buttons(self, context, layout):
-        super().draw_buttons(context, layout)
-        layout.prop(self, "filter")
-
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
-
+    def execute(self, context):
+        from .mixins import get_input_socket_data, set_output_socket_data
+        obs = get_input_socket_data(self.inputs["objects"], context)
+        filter = get_input_socket_data(self.inputs["filter"], context)
         import re
-        obs = [ob for ob in obs if re. search(self.filter, ob.name)]
-
-        return obs
+        obs = [ob for ob in obs if re. search(filter, ob.name)]
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
 
 class WFNodeCombineSets(WFFilterNode):
@@ -135,15 +95,20 @@ class WFNodeCombineSets(WFFilterNode):
 
     def init(self, context):
         super().init(context)
+        self.inputs[0].extensible = True
+        socket = self.inputs.new("WFObjectsSocket", "objects")
+        socket.extensible = True
 
-    def draw_buttons(self, context, layout):
-        super().draw_buttons(context, layout)
+    def execute(self, context):
+        obs = []
+        from .mixins import get_input_socket_data, set_output_socket_data
+        for i in range(0, len(self.inputs)):
+            data = get_input_socket_data(self.inputs[i], context)
+            obs.extend(data)
 
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = super().execute(context)
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
-        return obs
-    
+
 class WFNodeRemoveFromSet(WFFilterNode):
     bl_label = "Remove From Set"
     bl_description = """Removes the given input objects from the first input set
@@ -152,27 +117,24 @@ class WFNodeRemoveFromSet(WFFilterNode):
 
     def init(self, context):
         super().init(context)
+        self.inputs[0].extensible = True
+        socket = self.inputs.new("WFObjectsSocket", "objects")
+        socket.extensible = True
 
-    def draw_buttons(self, context, layout):
-        super().draw_buttons(context, layout)
-
-    def execute(self, context) -> list[bpy.types.Object]:
+    def execute(self, context):
         obs = set()
 
-        if self.cached_data:
-            obs = self.cached_data
-        else:
-            if len(self.inputs) > 0:
-                data = self.execute_input_socket(self.inputs[0], context)
-                obs.update(data)
+        if len(self.inputs) > 0:
+            from .mixins import get_input_socket_data, set_output_socket_data
+            data = get_input_socket_data(self.inputs[0], context)
+            obs.update(data)
 
-                excl = set()
-                if len(self.inputs) > 1:
-                    for i in range(1, len(self.inputs)):
-                        data = self.execute_input_socket(self.inputs[i], context)
-                        excl.update(data)
+            excl = set()
+            if len(self.inputs) > 1:
+                for i in range(1, len(self.inputs)):
+                    data = get_input_socket_data(self.inputs[i], context)
+                    excl.update(data)
 
-                    obs -= excl
-                    self.cached_data = obs
+                obs -= excl
 
-        return list(obs)
+        set_output_socket_data(self.outputs["objects"], list(obs), context)

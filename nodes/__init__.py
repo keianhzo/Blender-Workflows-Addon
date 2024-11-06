@@ -1,5 +1,5 @@
 
-from . import transforms, inputs, outputs, filters, debug
+from . import transforms, inputs, outputs, filters, debug, mixins, group
 import bpy
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
@@ -19,7 +19,7 @@ WF_CATEGORIES = [
         NodeItem("WFNodeObjectInput"),
         NodeItem("WFNodeCollectionInput"),
     ]),
-    WFCategory("WORKFLOWS_Output", "Output", items=[
+    WFCategory("WORKFLOWS_Export", "Export", items=[
         NodeItem("WFNodeExportGLTF"),
         NodeItem("WFNodeExportFBX"),
     ]),
@@ -63,12 +63,15 @@ class RunWorkflowOperator(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context: Context):
-        node = context.target
+        if not context:
+            return False
+
+        node = bpy.context.target
         if hasattr(node, "filepath"):
             if node.filepath:
                 return True
             return False
-        
+
         return True
 
     def execute(self, context):
@@ -128,6 +131,9 @@ CLASSES = [
 
 
 def register():
+    mixins.register()
+    group.register()
+
     for cls in CLASSES:
         bpy.utils.register_class(cls)
 
@@ -139,3 +145,6 @@ def unregister():
 
     for cls in CLASSES:
         bpy.utils.unregister_class(cls)
+
+    group.unregister()
+    mixins.unregister()
