@@ -1,5 +1,5 @@
 
-from . import export, transforms, inputs, filters, debug, group, modifiers, geometry, uv, grouping, misc
+from . import export, transforms, inputs, filters, debug, group, modifiers, geometry, uv, grouping, misc, object
 import bpy
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
@@ -25,6 +25,9 @@ WF_CATEGORIES = [
     WFCategory("WORKFLOWS_Transforms", "Transforms", items=[
         NodeItem("WFNodeTranslateToPosition"),
         NodeItem("WFNodeTranslateToObjectPosition"),
+    ]),
+    WFCategory("WORKFLOWS_Object", "Object", items=[
+        NodeItem("WFNodeInstancesMakeReal"),
     ]),
     WFCategory("WORKFLOWS_Geometry", "Geometry", items=[
         NodeItem("WFNodeJoinObjects"),
@@ -81,6 +84,7 @@ CLASSES = [
     grouping.WFNodeRemoveFromSet,
     debug.WFNodePrintObjectNames,
     debug.WFNodeDryRun,
+    object.WFNodeInstancesMakeReal
 ]
 
 
