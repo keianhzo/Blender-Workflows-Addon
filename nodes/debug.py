@@ -1,5 +1,5 @@
 import bpy
-from .mixins import WFDebugNode, WFOutputNode, WFInOutFunctionNode
+from .mixins import WFDebugNode, WFOutputNode, WFInOutFunctionNode, WFRunnableNode
 
 
 class WFNodePrintObjectNames(WFInOutFunctionNode, WFDebugNode):
@@ -21,7 +21,7 @@ class WFNodePrintObjectNames(WFInOutFunctionNode, WFDebugNode):
             print(ob.name)
 
 
-class WFNodeDryRun(WFOutputNode, WFDebugNode):
+class WFNodeDryRun(WFOutputNode, WFDebugNode, WFRunnableNode):
     bl_label = "Dry Run"
     bl_description = """Executes the workflow without doing anything"""
     bl_width_default = 300
@@ -31,4 +31,5 @@ class WFNodeDryRun(WFOutputNode, WFDebugNode):
 
     def draw_buttons(self, context, layout):
         layout.context_pointer_set('target', self)
-        layout.operator("wf.run_workflow", icon='PLAY', text="")
+        op = layout.operator("wf.run_workflow", icon='PLAY', text="")
+        op.node_name = self.name

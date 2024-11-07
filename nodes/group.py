@@ -2,6 +2,7 @@ import bpy
 from bpy.types import NodeCustomGroup
 from bpy.types import Operator
 from mathutils import Vector
+from ..consts import GROUP_COLOR
 
 
 def update_sockets(node_group_sockets, io_node_sockets):
@@ -60,6 +61,10 @@ def update_sockets(node_group_sockets, io_node_sockets):
 class WFNodeGroup(NodeCustomGroup):
     bl_idname = "WFNodeGroup"
     bl_label = "Node Group"
+
+    def init(self, context):
+        self.use_custom_color = True
+        self.color = GROUP_COLOR
 
     def draw_buttons(self, context, layout):
         if (self == self.id_data.nodes.active):

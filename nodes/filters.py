@@ -95,16 +95,11 @@ class WFNodeCombineSets(WFFilterNode):
 
     def init(self, context):
         super().init(context)
-        self.inputs[0].extensible = True
-        socket = self.inputs.new("WFObjectsSocket", "objects")
-        socket.extensible = True
+        self.inputs["objects"].link_limit = 0
 
     def execute(self, context):
-        obs = []
-        from .mixins import get_input_socket_data, set_output_socket_data
-        for i in range(0, len(self.inputs)):
-            data = get_input_socket_data(self.inputs[i], context)
-            obs.extend(data)
+        from .mixins import get_all_input_socket_data, set_output_socket_data
+        obs = get_all_input_socket_data(self.inputs["objects"], context)
 
         set_output_socket_data(self.outputs["objects"], obs, context)
 
@@ -117,24 +112,14 @@ class WFNodeRemoveFromSet(WFFilterNode):
 
     def init(self, context):
         super().init(context)
-        self.inputs[0].extensible = True
-        socket = self.inputs.new("WFObjectsSocket", "objects")
-        socket.extensible = True
+        self.inputs["objects"].link_limit = 0
+        self.inputs.new("WFObjectsSocket", "exclude")
+        self.inputs["exclude"].link_limit = 0
 
     def execute(self, context):
-        obs = set()
-
-        if len(self.inputs) > 0:
-            from .mixins import get_input_socket_data, set_output_socket_data
-            data = get_input_socket_data(self.inputs[0], context)
-            obs.update(data)
-
-            excl = set()
-            if len(self.inputs) > 1:
-                for i in range(1, len(self.inputs)):
-                    data = get_input_socket_data(self.inputs[i], context)
-                    excl.update(data)
-
-                obs -= excl
+        from .mixins import get_all_input_socket_data, set_output_socket_data
+        obs = set(get_all_input_socket_data(self.inputs["objects"], context))
+        excl = set(get_all_input_socket_data(self.inputs["exclude"], context))
+        obs -= excl
 
         set_output_socket_data(self.outputs["objects"], list(obs), context)

@@ -63,7 +63,7 @@ def get_prefs():
 
 
 def export_scene_gltf(context, path):
-    import os
+    # TODO: Add support for GLTF presets selection"
     args = {
         # Settings from "Remember Export Settings"
         **dict(context.scene.get('glTF2ExportSettings', {})),
@@ -84,10 +84,8 @@ def export_scene_gltf(context, path):
 
 
 def export_scene_fbx(context, path):
-    import os
+    # TODO: Add support for FBX presets selection"
     args = {
-        # TODO: Add support for FBX presets selection"
-
         'filepath': bpy.path.abspath(path),
         'use_selection': True,
         'use_visible': False,
@@ -97,6 +95,17 @@ def export_scene_fbx(context, path):
     }
 
     bpy.ops.export_scene.fbx(**args)
+
+
+def export_scene_obj(context, path):
+    # TODO: Add support for OBJ presets selection"
+    args = {
+        'filepath': bpy.path.abspath(path),
+        'export_selected_objects': True,
+        'apply_modifiers': False,
+    }
+
+    bpy.ops.wm.obj_export(**args)
 
 
 # Function to recursively search for the LayerCollection containing the object

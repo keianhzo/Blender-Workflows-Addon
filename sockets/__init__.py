@@ -22,5 +22,5 @@ def register():
 def unregister():
     del bpy.types.NodeSocket.wf_has_cache
 
-    for cls in CLASSES:
+    for cls in reversed(CLASSES):
         bpy.utils.unregister_class(cls)
