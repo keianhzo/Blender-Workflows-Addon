@@ -19,16 +19,12 @@ class WFNodeSceneInput(WFInputNode):
 
     def init(self, context):
         super().init(context)
-        self.outputs.new("WFObjectsSocket", "out")
-        self.target = context.scene
+        self.target = bpy.context.scene
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
+    def execute(self, context):
+        obs = []
         if self.target:
-            return self.target.objects.values()
-        return []
-
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+            obs = self.target.objects.values()
 
         vlc = bpy.context.view_layer.layer_collection
         from ..utils import find_object_layer_collection
@@ -36,7 +32,8 @@ class WFNodeSceneInput(WFInputNode):
             lc = find_object_layer_collection(vlc, ob)
             lc.exclude = False
 
-        return obs
+        from .mixins import set_output_socket_data
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
 
 def on_collection_update(self, context):
@@ -56,27 +53,20 @@ class WFNodeCollectionInput(WFInputNode):
 
     def init(self, context):
         super().init(context)
-        self.outputs.new("WFObjectsSocket", "out")
         self.target = bpy.data.collections[0]
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
-        obs = []
-
-        def get_collection_objects(col):
-            obs = []
-            obs.extend(col.objects.values())
-            for child in col.children:
-                obs.extend(get_collection_objects(child))
-
-            return obs
-            
+    def execute(self, context):
+        obs = list()
         if self.target:
-            obs = get_collection_objects(self.target)
-        
-        return list(set(obs))
+            def get_collection_objects(col):
+                obs = []
+                obs.extend(col.objects.values())
+                for child in col.children:
+                    obs.extend(get_collection_objects(child))
 
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
+                return obs
+
+            obs = list(set(get_collection_objects(self.target)))
 
         vlc = bpy.context.view_layer.layer_collection
         from ..utils import find_object_layer_collection
@@ -84,7 +74,8 @@ class WFNodeCollectionInput(WFInputNode):
             lc = find_object_layer_collection(vlc, ob)
             lc.exclude = False
 
-        return obs
+        from .mixins import set_output_socket_data
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
 
 def on_object_update(self, context):
@@ -111,7 +102,6 @@ class WFNodeObjectInput(WFInputNode):
 
     def init(self, context):
         super().init(context)
-        self.outputs.new("WFObjectsSocket", "out")
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
@@ -120,17 +110,11 @@ class WFNodeObjectInput(WFInputNode):
             from ..consts import ERROR_COLOR
             self.color = ERROR_COLOR
 
-    def get_input_data(self, context) -> list[bpy.types.Object]:
+    def execute(self, context):
         obs = [self.target]
-
         if self.children:
             for child in self.target.children:
                 obs.append(child)
-
-        return obs
-
-    def execute(self, context) -> list[bpy.types.Object]:
-        obs = self.get_input_data(context)
 
         vlc = bpy.context.view_layer.layer_collection
         from ..utils import find_object_layer_collection
@@ -141,4 +125,5 @@ class WFNodeObjectInput(WFInputNode):
             else:
                 print(f"Error: object {ob.name} doesn't have an active layer collection")
 
-        return obs
+        from .mixins import set_output_socket_data
+        set_output_socket_data(self.outputs["objects"], obs, context)

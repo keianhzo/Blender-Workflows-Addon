@@ -41,42 +41,101 @@ class WFNodeTree(NodeTree):
                     self.links.remove(link)
 
 
+class RunWorkflowOperator(bpy.types.Operator):
+    bl_idname = "wf.run_workflow"
+    bl_label = "Run Workflow"
+    # bl_options = {'REGISTER', 'UNDO'}
+
+    node_name: bpy.props.StringProperty(default="")
+
+    def execute(self, context):
+        original_undo_steps = bpy.context.preferences.edit.undo_steps
+        bpy.context.preferences.edit.undo_steps = 1000
+        prev_global_undo = bpy.context.preferences.edit.use_global_undo
+        bpy.context.preferences.edit.use_global_undo = True
+        bpy.ops.ed.undo_push(message='Run Workflow')
+
+        try:
+            node = None
+            for tree in bpy.data.node_groups:
+                node = next((tree_node for tree_node in tree.nodes if tree_node.name == self.node_name), None)
+                if node:
+                    break
+
+            if not node:
+                result = {'CANCELLED'}
+            else:
+                node.execute(context)
+
+            # from ..nodes.mixins import WFNode
+            # for node_tree in bpy.data.node_groups:
+            #     for node in node_tree.nodes:
+            #         if isinstance(node, WFNode):
+            #             node.cleanup()
+
+            result = {'FINISHED'}
+
+        except Exception as err:
+            self.report({'ERROR'}, f'"Run Workflow" execution for node "{self.node_name}" failed: {err}')
+            traceback.print_exc()
+
+            result = {'CANCELLED'}
+
+        finally:
+            bpy.ops.ed.undo_push(message='Run Workflow')
+            bpy.ops.ed.undo()
+            bpy.ops.ed.undo()
+            bpy.ops.ed.undo_push(message=f'Run Workflow "{self.node_name}"')
+            bpy.context.preferences.edit.undo_steps = original_undo_steps
+            bpy.context.preferences.edit.use_global_undo = prev_global_undo
+
+        return result
+
+
 class RunAllWorkflowsOperator(bpy.types.Operator):
     bl_idname = "wf.run_all_workflows"
     bl_label = "Run All Workflows"
     bl_description = "Runs all the workflows in the current workflow tree"
-    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def description(cls, context, properties):
-        return "Runs the current workflow"
+        return "Runs all workflows in the active workflow tree"
 
     @classmethod
     def poll(cls, context: Context):
         node_tree = context.space_data.node_tree
+        from ..nodes.mixins import WFRunnableNode
         for node in node_tree.nodes:
-            if node.bl_idname in INPUT_NODES:
+            if isinstance(node, WFRunnableNode):
                 return True
         return False
 
     def execute(self, context):
         try:
             node_tree = context.space_data.node_tree
-            from ..nodes.mixins import WFOutputNode
+
+            node_names = []
+            from ..nodes.mixins import WFRunnableNode
             for node in node_tree.nodes:
-                if isinstance(node, WFOutputNode):
-                    node.execute(context)
+                if isinstance(node, WFRunnableNode):
+                    node_names.append(node.name)
+
+            for node_name in node_names:
+                bpy.ops.wf.run_workflow(node_name=node_name)
+
+            for node_name in node_names:
+                bpy.ops.ed.undo()
+            bpy.ops.ed.undo_push(message='Run All Workflows')
+
+            self.report({'INFO'}, f'"Run All workflows" execution success')
 
             result = {'FINISHED'}
 
         except Exception as err:
+            self.report({'ERROR'}, f'"Run All workflows" execution failed: {err}')
             traceback.print_exc()
 
             result = {'CANCELLED'}
-
-        finally:
-            bpy.ops.ed.undo_push(message='Workflow executed')
-            bpy.ops.ed.undo()
 
         return result
 
@@ -95,13 +154,19 @@ class WF_PT_GraphPanel(bpy.types.Panel):
         col.operator(RunAllWorkflowsOperator.bl_idname)
 
 
+CLASSES = [
+    WFNodeTree,
+    RunWorkflowOperator,
+    RunAllWorkflowsOperator,
+    WF_PT_GraphPanel
+]
+
+
 def register():
-    bpy.utils.register_class(WFNodeTree)
-    bpy.utils.register_class(RunAllWorkflowsOperator)
-    bpy.utils.register_class(WF_PT_GraphPanel)
+    for cls in CLASSES:
+        bpy.utils.register_class(cls)
 
 
 def unregister():
-    bpy.utils.unregister_class(WFNodeTree)
-    bpy.utils.unregister_class(RunAllWorkflowsOperator)
-    bpy.utils.unregister_class(WF_PT_GraphPanel)
+    for cls in reversed(CLASSES):
+        bpy.utils.unregister_class(cls)

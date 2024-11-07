@@ -1,10 +1,8 @@
 
-from . import transforms, inputs, outputs, filters, debug
+from . import export, transforms, inputs, filters, debug, group, modifiers, geometry, uv, grouping, misc
 import bpy
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
-from bpy.types import Context
-import traceback
 
 
 class WFCategory(NodeCategory):
@@ -19,19 +17,24 @@ WF_CATEGORIES = [
         NodeItem("WFNodeObjectInput"),
         NodeItem("WFNodeCollectionInput"),
     ]),
-    WFCategory("WORKFLOWS_Output", "Output", items=[
+    WFCategory("WORKFLOWS_Export", "Export", items=[
         NodeItem("WFNodeExportGLTF"),
         NodeItem("WFNodeExportFBX"),
+        NodeItem("WFNodeExportOBJ"),
     ]),
     WFCategory("WORKFLOWS_Transforms", "Transforms", items=[
+        NodeItem("WFNodeTranslateToPosition"),
+        NodeItem("WFNodeTranslateToObjectPosition"),
+    ]),
+    WFCategory("WORKFLOWS_Geometry", "Geometry", items=[
+        NodeItem("WFNodeJoinObjects"),
+    ]),
+    WFCategory("WORKFLOWS_Modifiers", "Modifiers", items=[
         NodeItem("WFNodeApplyModifierType"),
         NodeItem("WFNodeApplyModifierName"),
         NodeItem("WFNodeApplyAllModifiers"),
-        NodeItem("WFNodeAddPrefixToName"),
-        NodeItem("WFNodeAddSuffixToName"),
-        NodeItem("WFNodeJoinObjects"),
-        NodeItem("WFNodeTranslateToPosition"),
-        NodeItem("WFNodeTranslateToObjectPosition"),
+    ]),
+    WFCategory("WORKFLOWS_UV", "UV", items=[
         NodeItem("WFNodeSetActiveUVMap"),
     ]),
     WFCategory("WORKFLOWS_Filters", "Filters", items=[
@@ -39,95 +42,51 @@ WF_CATEGORIES = [
         NodeItem("WFNodeFilterEndsWith"),
         NodeItem("WFNodeFilterContains"),
         NodeItem("WFNodeFilterRegex"),
+    ]),
+    WFCategory("WORKFLOWS_Grouping", "Grouping", items=[
         NodeItem("WFNodeCombineSets"),
         NodeItem("WFNodeRemoveFromSet"),
     ]),
     WFCategory("WORKFLOWS_Debug", "Debug", items=[
         NodeItem("WFNodePrintObjectNames"),
         NodeItem("WFNodeDryRun"),
-    ])
+    ]),
+    WFCategory("WORKFLOWS_Misc", "Misc", items=[
+        NodeItem("WFNodeAddPrefixToName"),
+        NodeItem("WFNodeAddSuffixToName"),
+    ]),
 ]
 
-
-class RunWorkflowOperator(bpy.types.Operator):
-    bl_idname = "wf.run_workflow"
-    bl_label = "Run Workflow"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def description(cls, context, properties):
-        node = context.target
-        if hasattr(node, "filepath") and node.filepath:
-            return "Runs this workflow"
-        return "The file path must be set to run this workflow"
-
-    @classmethod
-    def poll(cls, context: Context):
-        node = context.target
-        if hasattr(node, "filepath"):
-            if node.filepath:
-                return True
-            return False
-        
-        return True
-
-    def execute(self, context):
-        original_undo_steps = bpy.context.preferences.edit.undo_steps
-        bpy.context.preferences.edit.undo_steps = 1000
-
-        try:
-            node = context.target
-            node.execute(context)
-
-            node_tree = context.space_data.node_tree
-            from .mixins import WFNode
-            for node in node_tree.nodes:
-                if isinstance(node, WFNode):
-                    node.cleanup()
-
-            result = {'FINISHED'}
-
-        except Exception as err:
-            traceback.print_exc()
-
-            result = {'CANCELLED'}
-
-        finally:
-            bpy.ops.ed.undo_push(message='Workflow executed')
-            bpy.ops.ed.undo()
-            bpy.context.preferences.edit.undo_steps = original_undo_steps
-
-        return result
-
-
 CLASSES = [
-    RunWorkflowOperator,
     inputs.WFNodeSceneInput,
     inputs.WFNodeObjectInput,
     inputs.WFNodeCollectionInput,
-    outputs.WFNodeExportGLTF,
-    outputs.WFNodeExportFBX,
-    transforms.WFNodeApplyModifierType,
-    transforms.WFNodeApplyModifierName,
-    transforms.WFNodeApplyAllModifiers,
-    transforms.WFNodeAddPrefixToName,
-    transforms.WFNodeAddSuffixToName,
-    transforms.WFNodeJoinObjects,
+    export.WFNodeExportGLTF,
+    export.WFNodeExportFBX,
+    export.WFNodeExportOBJ,
+    modifiers.WFNodeApplyModifierType,
+    modifiers.WFNodeApplyModifierName,
+    modifiers.WFNodeApplyAllModifiers,
+    misc.WFNodeAddPrefixToName,
+    misc.WFNodeAddSuffixToName,
+    geometry.WFNodeJoinObjects,
     transforms.WFNodeTranslateToPosition,
     transforms.WFNodeTranslateToObjectPosition,
-    transforms.WFNodeSetActiveUVMap,
+    uv.WFNodeSetActiveUVMap,
     filters.WFNodeFilterStartsWith,
     filters.WFNodeFilterEndsWith,
     filters.WFNodeFilterContains,
     filters.WFNodeFilterRegex,
-    filters.WFNodeCombineSets,
-    filters.WFNodeRemoveFromSet,
+    grouping.WFNodeCombineSets,
+    grouping.WFNodeRemoveFromSet,
     debug.WFNodePrintObjectNames,
     debug.WFNodeDryRun,
 ]
 
 
 def register():
+    group.register()
+
     for cls in CLASSES:
         bpy.utils.register_class(cls)
 
@@ -137,5 +96,7 @@ def register():
 def unregister():
     nodeitems_utils.unregister_node_categories("WORKFLOWS_NODES")
 
-    for cls in CLASSES:
+    for cls in reversed(CLASSES):
         bpy.utils.unregister_class(cls)
+
+    group.unregister()
