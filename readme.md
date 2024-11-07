@@ -15,6 +15,9 @@ While this add-on helps automate repetitive tasks, it is currently a work-in-pro
 
 ⚠️ **Note:** This add-on updates the scene with each execution step and reverts changes afterward. However, in some cases, it may fail to fully revert modifications, potentially leaving your scene altered. Always save your scene before running workflows and verify that the scene reverts correctly before saving again.
 
+![Captura de pantalla 2024-11-07 160159](https://github.com/user-attachments/assets/e7ff6128-00b2-45ba-93f1-345a218a13fe)
+
+
 # Installation
 Download this repo as a zip file and install the add-on.
 
@@ -39,9 +42,3 @@ Download this repo as a zip file and install the add-on.
 6. Run the Workflow clicking on the "Play" button on the output node. If you have multiple output nodes in one workflow you can batch them using the "Run All Workflows" button:
 
 ![Captura de pantalla 2024-10-28 164530](https://github.com/user-attachments/assets/a74f21f4-2b5f-49d0-b964-25a6b3f0e5c8)
-
-# Examples:
-
-![Screenshot](https://github.com/user-attachments/assets/79b6a6e1-6213-49b5-995a-be1862feac53)
-![Screenshot](https://github.com/user-attachments/assets/041b41fb-9bcb-4276-8466-2401b855260c)
-![Screenshot](https://github.com/user-attachments/assets/84432990-4988-4478-b0be-048d47068e2c)
