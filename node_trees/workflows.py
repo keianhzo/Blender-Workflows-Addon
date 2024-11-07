@@ -4,6 +4,8 @@ import traceback
 
 INPUT_NODES = ["WFNodeSceneInput", "WFNodeObjectInput", "WFNodeCollectionInput"]
 
+last_exec_error = None
+
 
 class WFNodeTree(NodeTree):
     bl_idname = "WFNodeTree"
@@ -44,7 +46,7 @@ class WFNodeTree(NodeTree):
 class RunWorkflowOperator(bpy.types.Operator):
     bl_idname = "wf.run_workflow"
     bl_label = "Run Workflow"
-    # bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER'}
 
     node_name: bpy.props.StringProperty(default="")
 
@@ -56,6 +58,9 @@ class RunWorkflowOperator(bpy.types.Operator):
         bpy.ops.ed.undo_push(message='Run Workflow')
 
         try:
+            global last_exec_error
+            last_exec_error = False
+
             node = None
             for tree in bpy.data.node_groups:
                 node = next((tree_node for tree_node in tree.nodes if tree_node.name == self.node_name), None)
@@ -67,17 +72,14 @@ class RunWorkflowOperator(bpy.types.Operator):
             else:
                 node.execute(context)
 
-            # from ..nodes.mixins import WFNode
-            # for node_tree in bpy.data.node_groups:
-            #     for node in node_tree.nodes:
-            #         if isinstance(node, WFNode):
-            #             node.cleanup()
-
+            self.report({'INFO'}, f'"Run Workflow" execution for node "{self.node_name}" finished successful')
             result = {'FINISHED'}
 
         except Exception as err:
             self.report({'ERROR'}, f'"Run Workflow" execution for node "{self.node_name}" failed: {err}')
             traceback.print_exc()
+            bpy.ops.screen.info_log_show()
+            last_exec_error = True
 
             result = {'CANCELLED'}
 
@@ -96,6 +98,7 @@ class RunAllWorkflowsOperator(bpy.types.Operator):
     bl_idname = "wf.run_all_workflows"
     bl_label = "Run All Workflows"
     bl_description = "Runs all the workflows in the current workflow tree"
+    bl_options = {'REGISTER'}
 
     @classmethod
     def description(cls, context, properties):
@@ -112,6 +115,9 @@ class RunAllWorkflowsOperator(bpy.types.Operator):
 
     def execute(self, context):
         try:
+            global last_exec_error
+            last_exec_error = False
+
             node_tree = context.space_data.node_tree
 
             node_names = []
@@ -127,17 +133,30 @@ class RunAllWorkflowsOperator(bpy.types.Operator):
                 bpy.ops.ed.undo()
             bpy.ops.ed.undo_push(message='Run All Workflows')
 
-            self.report({'INFO'}, f'"Run All workflows" execution success')
-
+            self.report({'INFO'}, f'"Run All Workflows" execution successful')
             result = {'FINISHED'}
 
         except Exception as err:
             self.report({'ERROR'}, f'"Run All workflows" execution failed: {err}')
             traceback.print_exc()
+            bpy.ops.screen.info_log_show()
+            last_exec_error = True
 
             result = {'CANCELLED'}
 
         return result
+
+
+class ShowInfoLogOperator(bpy.types.Operator):
+    bl_idname = "wf.last_exec_error"
+    bl_label = "Show Info Log"
+    bl_description = "Shows the info log window"
+
+    def execute(self, context):
+        global last_exec_error
+        last_exec_error = False
+        bpy.ops.screen.info_log_show()
+        return {'FINISHED'}
 
 
 class WF_PT_GraphPanel(bpy.types.Panel):
@@ -149,15 +168,25 @@ class WF_PT_GraphPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        col = row.column(align=True)
-        col.operator(RunAllWorkflowsOperator.bl_idname)
+        main = layout.column()
+        main.row().operator(RunAllWorkflowsOperator.bl_idname)
+        show_info_row = main.row()
+        show_info_row.operator(ShowInfoLogOperator.bl_idname)
+        result_row = main.row()
+        result_row.column().label(text=f'Last execution result:')
+        global last_exec_error
+        if last_exec_error != None:
+            result_row.column().label(text=f'{"Error" if last_exec_error else "Success"}')
+        else:
+            show_info_row.enabled = False
+            result_row.enabled = False
 
 
 CLASSES = [
     WFNodeTree,
     RunWorkflowOperator,
     RunAllWorkflowsOperator,
+    ShowInfoLogOperator,
     WF_PT_GraphPanel
 ]
 
