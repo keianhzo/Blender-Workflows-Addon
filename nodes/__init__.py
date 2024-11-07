@@ -1,5 +1,5 @@
 
-from . import export, transforms, inputs, filters, debug, mixins, group
+from . import export, transforms, inputs, filters, debug, group, modifiers, geometry, uv, grouping, misc
 import bpy
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
@@ -23,14 +23,18 @@ WF_CATEGORIES = [
         NodeItem("WFNodeExportOBJ"),
     ]),
     WFCategory("WORKFLOWS_Transforms", "Transforms", items=[
+        NodeItem("WFNodeTranslateToPosition"),
+        NodeItem("WFNodeTranslateToObjectPosition"),
+    ]),
+    WFCategory("WORKFLOWS_Geometry", "Geometry", items=[
+        NodeItem("WFNodeJoinObjects"),
+    ]),
+    WFCategory("WORKFLOWS_Modifiers", "Modifiers", items=[
         NodeItem("WFNodeApplyModifierType"),
         NodeItem("WFNodeApplyModifierName"),
         NodeItem("WFNodeApplyAllModifiers"),
-        NodeItem("WFNodeAddPrefixToName"),
-        NodeItem("WFNodeAddSuffixToName"),
-        NodeItem("WFNodeJoinObjects"),
-        NodeItem("WFNodeTranslateToPosition"),
-        NodeItem("WFNodeTranslateToObjectPosition"),
+    ]),
+    WFCategory("WORKFLOWS_UV", "UV", items=[
         NodeItem("WFNodeSetActiveUVMap"),
     ]),
     WFCategory("WORKFLOWS_Filters", "Filters", items=[
@@ -38,13 +42,19 @@ WF_CATEGORIES = [
         NodeItem("WFNodeFilterEndsWith"),
         NodeItem("WFNodeFilterContains"),
         NodeItem("WFNodeFilterRegex"),
+    ]),
+    WFCategory("WORKFLOWS_Grouping", "Grouping", items=[
         NodeItem("WFNodeCombineSets"),
         NodeItem("WFNodeRemoveFromSet"),
     ]),
     WFCategory("WORKFLOWS_Debug", "Debug", items=[
         NodeItem("WFNodePrintObjectNames"),
         NodeItem("WFNodeDryRun"),
-    ])
+    ]),
+    WFCategory("WORKFLOWS_Misc", "Misc", items=[
+        NodeItem("WFNodeAddPrefixToName"),
+        NodeItem("WFNodeAddSuffixToName"),
+    ]),
 ]
 
 CLASSES = [
@@ -54,21 +64,21 @@ CLASSES = [
     export.WFNodeExportGLTF,
     export.WFNodeExportFBX,
     export.WFNodeExportOBJ,
-    transforms.WFNodeApplyModifierType,
-    transforms.WFNodeApplyModifierName,
-    transforms.WFNodeApplyAllModifiers,
-    transforms.WFNodeAddPrefixToName,
-    transforms.WFNodeAddSuffixToName,
-    transforms.WFNodeJoinObjects,
+    modifiers.WFNodeApplyModifierType,
+    modifiers.WFNodeApplyModifierName,
+    modifiers.WFNodeApplyAllModifiers,
+    misc.WFNodeAddPrefixToName,
+    misc.WFNodeAddSuffixToName,
+    geometry.WFNodeJoinObjects,
     transforms.WFNodeTranslateToPosition,
     transforms.WFNodeTranslateToObjectPosition,
-    transforms.WFNodeSetActiveUVMap,
+    uv.WFNodeSetActiveUVMap,
     filters.WFNodeFilterStartsWith,
     filters.WFNodeFilterEndsWith,
     filters.WFNodeFilterContains,
     filters.WFNodeFilterRegex,
-    filters.WFNodeCombineSets,
-    filters.WFNodeRemoveFromSet,
+    grouping.WFNodeCombineSets,
+    grouping.WFNodeRemoveFromSet,
     debug.WFNodePrintObjectNames,
     debug.WFNodeDryRun,
 ]
