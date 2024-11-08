@@ -1,27 +1,34 @@
 # Blender Workflows Add-On
 A Node Graph-Based Solution for Streamlined Blender Tasks
 
-This add-on introduces a node graph system to simplify certain Blender tasks requiring granular control. I've designed it to streamline processes I frequently handle manually or through scripts, particularly when exporting scenes.
+This add-on introduces a node-based system to simplify complex or repetitive tasks in Blender, especially those that require fine control. Designed to automate time-consuming processes I often handle manually or through scripts—primarily scene exporting—this add-on helps users define workflows that sequentially execute specified actions on any set of objects, producing efficient outputs.
 
-Some of the tasks this add-on automates for scene export include:
-- Merging multiple high-poly meshes into a single mesh before export
-- Adding prefixes or suffixes to objects and meshes
-- Moving objects to specific positions before export
-- Exporting different collections or objects into separate files
-- Defining sets of objects and collections to export together
-- Selectively applying modifiers during export
+A key application is optimizing workflows for exporting high- and low-poly versions of objects to other software. For example, I often need a low-poly export with certain modifiers removed and a specific naming convention, alongside a high-poly version with other modifiers and a different suffix. While achievable through collection exporter configurations, manual renaming, and scripts, a node-based workflow is far more manageable and user-friendly.
 
-While this add-on helps automate repetitive tasks, it is currently a work-in-progress (WIP) and not feature-complete or production-ready, so use it at your own risk. I plan to expand its features based on my own needs, so comprehensive functionality may take time. If you have feature suggestions, feel free to open an issue—I’m open to adding useful, broadly applicable features.
+Currently, the nodes focus on export tasks, but future updates may expand functionality to support pre-rendering, post-import processing, and more. This add-on is still in development (WIP) and not yet ready for production use, so use with caution. I’m iterating based on my workflow needs and welcome suggestions for new features—please open an issue if you have ideas for broadly useful enhancements.
 
-⚠️ **Note:** This add-on updates the scene with each execution step and reverts changes afterward. However, in some cases, it may fail to fully revert modifications, potentially leaving your scene altered. Always save your scene before running workflows and verify that the scene reverts correctly before saving again.
+⚠️ **Note:** This add-on updates your scene during workflow execution and then reverts the changes. However, some modifications may not fully revert. Always save your scene before running workflows and verify the reversion before saving again.
 
 ![Captura de pantalla 2024-11-07 160159](https://github.com/user-attachments/assets/e7ff6128-00b2-45ba-93f1-345a218a13fe)
 
+## Examples
+[Here](https://github.com/keianhzo/Blender-Workflows-Addon/wiki/Examples)
 
-# Installation
+## Supported tasks
+- Export glTF, OBJ and FBX
+- Translate objects to work or other object position
+- Make instances real
+- Join objects
+- Apply all modifiers or selectively by type/name
+- Change the active UV map
+- Filter object sets by string or regex
+- Add prefix/suffix to object/data names
+- Add/remove objects to/from sets
+
+## Installation
 Download this repo as a zip file and install the add-on.
 
-# Usage
+## Usage
 1. Open the Workflows editor type using the dropdown menu:
    
 ![Captura de pantalla 2024-10-28 163659](https://github.com/user-attachments/assets/e056e283-ac95-4ac0-b85e-8bac998adb81)
