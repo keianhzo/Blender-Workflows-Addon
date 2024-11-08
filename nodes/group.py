@@ -1,8 +1,9 @@
 import bpy
-from bpy.types import NodeCustomGroup
+from bpy.types import NodeCustomGroup, NodeGroupInput
 from bpy.types import Operator
 from mathutils import Vector
 from ..consts import GROUP_COLOR
+from .mixins import WFNode
 
 
 def update_sockets(node_group_sockets, io_node_sockets):
@@ -11,13 +12,13 @@ def update_sockets(node_group_sockets, io_node_sockets):
     # Socket added
     if len(node_group_sockets) < len(sockets):
         print("New input socket added")
-        new_idx = 0
+        new_idx = len(sockets) - 1
         for idx in range(0, len(sockets)):
-            if len(node_group_sockets) > idx+1 and node_group_sockets[idx].identifier != sockets[idx].identifier:
+            if len(node_group_sockets) >= idx+1 and node_group_sockets[idx].identifier != sockets[idx].identifier:
                 new_idx = idx
                 break
 
-        new_socket = sockets[idx]
+        new_socket = sockets[new_idx]
         node_group_sockets.new(new_socket.bl_idname, new_socket.name, identifier=new_socket.identifier)
         node_group_sockets.move(len(node_group_sockets) - 1, new_idx)
 
@@ -58,7 +59,7 @@ def update_sockets(node_group_sockets, io_node_sockets):
                 break
 
 
-class WFNodeGroup(NodeCustomGroup):
+class WFNodeGroup(NodeCustomGroup, WFNode):
     bl_idname = "WFNodeGroup"
     bl_label = "Node Group"
 
@@ -85,6 +86,25 @@ class WFNodeGroup(NodeCustomGroup):
                 update_sockets(self.inputs, node.outputs)
             elif node.bl_idname == "NodeGroupOutput":
                 update_sockets(self.outputs, node.inputs)
+
+    def execute(self, context):
+        for node in self.node_tree.nodes:
+            for output in node.outputs:
+                output.wf_has_cache = False
+
+        input_node = next((tree_node for tree_node in self.node_tree.nodes
+                           if isinstance(tree_node, NodeGroupInput)),
+                          None)
+
+        from .mixins import get_input_socket_data, set_output_socket_data
+        for input_socket in self.inputs:
+            data = get_input_socket_data(input_socket, context)
+            input_node_socket = next(
+                (output_socket for output_socket in input_node.outputs
+                    if output_socket.identifier == input_socket.identifier),
+                None)
+            if input_node_socket:
+                set_output_socket_data(input_node_socket, data, context)
 
 
 class WFGroupNodesOperator(Operator):
@@ -218,6 +238,8 @@ class WFToggleEditGroupOperator(Operator):
 
     @classmethod
     def poll(cls, context):
+        if not context:
+            return
         space_data = context.space_data
         if hasattr(space_data, "node_tree"):
             if (space_data.node_tree):

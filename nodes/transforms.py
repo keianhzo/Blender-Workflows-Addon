@@ -43,7 +43,7 @@ class WFNodeTranslateToPosition(WFTransformNode):
         else:
             last_ob.matrix_world.translation = self.position
 
-        set_output_socket_data(self.outputs["objects"], [last_ob], context)
+        set_output_socket_data(self.outputs["objects"], obs, context)
 
 
 class WFNodeTranslateToObjectPosition(WFTransformNode):
@@ -77,4 +77,4 @@ class WFNodeTranslateToObjectPosition(WFTransformNode):
 
         last_ob.matrix_world.translation = self.target.matrix_world.translation
 
-        set_output_socket_data(self.outputs["objects"], [last_ob], context)
+        set_output_socket_data(self.outputs["objects"], obs, context)

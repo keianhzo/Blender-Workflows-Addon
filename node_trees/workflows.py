@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import NodeTree, NodeReroute, Context
+from bpy.types import NodeTree, NodeReroute
 import traceback
 
 INPUT_NODES = ["WFNodeSceneInput", "WFNodeObjectInput", "WFNodeCollectionInput"]
@@ -105,7 +105,9 @@ class RunAllWorkflowsOperator(bpy.types.Operator):
         return "Runs all workflows in the active workflow tree"
 
     @classmethod
-    def poll(cls, context: Context):
+    def poll(cls, context):
+        if not context:
+            return
         node_tree = context.space_data.node_tree
         from ..nodes.mixins import WFRunnableNode
         for node in node_tree.nodes:

@@ -8,6 +8,8 @@ from nodeitems_utils import NodeCategory, NodeItem
 class WFCategory(NodeCategory):
     @classmethod
     def poll(cls, context):
+        if not context:
+            return
         return context.space_data.tree_type == "WFNodeTree"
 
 
