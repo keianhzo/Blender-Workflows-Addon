@@ -7,7 +7,7 @@ A key application is optimizing workflows for exporting high- and low-poly versi
 
 Currently, the nodes focus on export tasks, but future updates may expand functionality to support pre-rendering, post-import processing, baking and more. This add-on is still in development (WIP) and not yet ready for production use, so use with caution. I’m iterating based on my workflow needs and welcome suggestions for new features—please open an issue if you have ideas for broadly useful enhancements.
 
-⚠️ **Note:** This add-on updates your scene during workflow execution and then reverts the changes. However, some modifications may not fully revert. Always save your scene before running workflows and verify the reversion before saving again.
+⚠️ **Note:** This add-on updates your scene during workflow execution and then reverts the changes. However, some modifications may not fully revert. I haven't run into those cases yet but be aware of that. Always save your scene before running workflows and verify the reversion before saving again.
 
 ![Captura de pantalla 2024-11-07 160159](https://github.com/user-attachments/assets/e7ff6128-00b2-45ba-93f1-345a218a13fe)
 
