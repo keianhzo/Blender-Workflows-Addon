@@ -32,6 +32,11 @@ Note: Only meshes are joined all other objects are ignore."""
             ob.select_set(True)
 
         if obs:
+            for ob in obs:
+                if ob.type != 'MESH':
+                    context.view_layer.objects.active = ob
+                    bpy.ops.object.convert(target='MESH')
+
             meshes = [ob for ob in obs if ob.type == 'MESH']
             if meshes:
                 last_ob = meshes[-1]
