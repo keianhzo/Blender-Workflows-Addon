@@ -16,14 +16,13 @@ Currently, the nodes focus on export tasks, but future updates may expand functi
 
 ## Supported tasks
 - Export glTF, OBJ and FBX
-- Translate objects to work or other object position
+- Translate objects
 - Make instances real
 - Join objects
-- Apply all modifiers or selectively by type/name
+- Apply modifiers
 - Change the active UV map
-- Filter object sets by string or regex
-- Add prefix/suffix to object/data names
-- Add/remove objects to/from sets
+- Filter object sets
+- Add a prefix/suffix
 
 ## Installation
 Download this repo as a zip file and install the add-on.
