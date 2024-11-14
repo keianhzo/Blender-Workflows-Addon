@@ -86,6 +86,7 @@ def export_scene_gltf(context, path):
 def export_scene_fbx(context, path):
     # TODO: Add support for FBX presets selection"
     args = {
+        **dict(context.window_manager.operator_properties_last("export_scene.fbx")),
         'filepath': bpy.path.abspath(path),
         'use_selection': True,
         'use_visible': False,
@@ -100,6 +101,7 @@ def export_scene_fbx(context, path):
 def export_scene_obj(context, path):
     # TODO: Add support for OBJ presets selection"
     args = {
+        **dict(context.window_manager.operator_properties_last("export_scene.obj")),
         'filepath': bpy.path.abspath(path),
         'export_selected_objects': True,
         'apply_modifiers': False,
