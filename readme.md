@@ -5,9 +5,9 @@ This add-on introduces a node-based system to simplify complex or repetitive tas
 
 A key application is optimizing workflows for exporting high- and low-poly versions of objects to other software. For example, I often need a low-poly export with certain modifiers removed and a specific naming convention, alongside a high-poly version with other modifiers and a different suffix. While achievable through collection exporter configurations, manual renaming, and scripts, a node-based workflow is far more manageable and user-friendly.
 
-Currently, the nodes focus on export tasks, but future updates may expand functionality to support pre-rendering, post-import processing, and more. This add-on is still in development (WIP) and not yet ready for production use, so use with caution. I’m iterating based on my workflow needs and welcome suggestions for new features—please open an issue if you have ideas for broadly useful enhancements.
+Currently, the nodes focus on export tasks, but future updates may expand functionality to support pre-rendering, post-import processing, baking and more. This add-on is still in development (WIP) and not yet ready for production use, so use with caution. I’m iterating based on my workflow needs and welcome suggestions for new features—please open an issue if you have ideas for broadly useful enhancements.
 
-⚠️ **Note:** This add-on updates your scene during workflow execution and then reverts the changes. However, some modifications may not fully revert. Always save your scene before running workflows and verify the reversion before saving again.
+⚠️ **Note:** This add-on updates your scene during workflow execution and then reverts the changes. However, some modifications may not fully revert. I haven't run into those cases yet but be aware of that. Always save your scene before running workflows and verify the reversion before saving again.
 
 ![Captura de pantalla 2024-11-07 160159](https://github.com/user-attachments/assets/e7ff6128-00b2-45ba-93f1-345a218a13fe)
 
