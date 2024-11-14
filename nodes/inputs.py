@@ -56,7 +56,7 @@ class WFNodeCollectionInput(WFInputNode):
         self.target = bpy.data.collections[0]
 
     def execute(self, context):
-        obs = list()
+        obs = []
         if self.target:
             def get_collection_objects(col):
                 obs = []
@@ -66,7 +66,7 @@ class WFNodeCollectionInput(WFInputNode):
 
                 return obs
 
-            obs = list(set(get_collection_objects(self.target)))
+            obs = get_collection_objects(self.target)
 
         vlc = bpy.context.view_layer.layer_collection
         from ..utils import find_object_layer_collection

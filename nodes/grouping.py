@@ -33,8 +33,9 @@ class WFNodeRemoveFromSet(WFFilterNode):
 
     def execute(self, context):
         from .mixins import get_all_input_socket_data, set_output_socket_data
-        obs = set(get_all_input_socket_data(self.inputs["objects"], context))
-        excl = set(get_all_input_socket_data(self.inputs["exclude"], context))
-        obs -= excl
+        obs = get_all_input_socket_data(self.inputs["objects"], context)
+        excl = get_all_input_socket_data(self.inputs["exclude"], context)
+        for ex_ob in excl:
+            obs.remove(ex_ob)
 
         set_output_socket_data(self.outputs["objects"], list(obs), context)

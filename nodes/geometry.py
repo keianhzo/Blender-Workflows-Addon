@@ -17,7 +17,7 @@ Note: Only meshes are joined all other objects are ignore."""
 
     def execute(self, context):
         from .mixins import get_input_socket_data, set_output_socket_data
-        obs = set(get_input_socket_data(self.inputs["objects"], context))
+        obs = get_input_socket_data(self.inputs["objects"], context)
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -50,7 +50,8 @@ Note: Only meshes are joined all other objects are ignore."""
             if hasattr(ob, "data") and ob.data:
                 last_ob.data.name = name
 
-        obs -= set(meshes)
-        obs.add(last_ob)
+        for mesh in meshes:
+            obs.remove(mesh)
+        obs.append(last_ob)
 
         set_output_socket_data(self.outputs["objects"], list(obs), context)
