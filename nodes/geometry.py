@@ -39,7 +39,7 @@ Note: Only meshes are joined all other objects are ignore."""
 
             meshes = [ob for ob in obs if ob.type == 'MESH']
             if meshes:
-                last_ob = meshes[-1]
+                last_ob = meshes[0]
 
         context.view_layer.objects.active = last_ob
         bpy.ops.object.join()
