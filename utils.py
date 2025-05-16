@@ -83,19 +83,38 @@ def export_scene_gltf(context, path):
     bpy.ops.export_scene.gltf(**args)
 
 
-def export_scene_fbx(context, path):
-    # TODO: Add support for FBX presets selection"
-    args = {
-        **dict(context.window_manager.operator_properties_last("export_scene.fbx")),
-        'filepath': bpy.path.abspath(path),
-        'use_selection': True,
-        'use_visible': False,
-        'use_active_collection': False,
-        'use_mesh_modifiers': False,
-        'use_mesh_modifiers_render': False,
-    }
+def export_scene_fbx(context, path, preset):
+    filename = "_".join(s for s in preset.split())
+    preset_path = os.path.join("operator", "export_scene.fbx")
 
-    bpy.ops.export_scene.fbx(**args)
+    if preset_path:
+        filepath = bpy.utils.preset_find(filename, preset_path)
+        if filepath:
+            class Container(object):
+                __slots__ = ('__dict__',)
+
+            op = Container()
+            file = open(filepath, 'r')
+
+            # storing the values from the preset on the class
+            for line in file.readlines()[3::]:
+                exec(line, globals(), locals())
+
+            # pass class dictionary to the operator
+            op.__dict__['filepath'] = bpy.path.abspath(path)
+            kwargs = op.__dict__
+            bpy.ops.export_scene.fbx(**kwargs)
+
+        else:
+            raise FileNotFoundError(f'Preset not found: "{preset}"')
+
+    else:
+        args = {
+            **dict(context.window_manager.operator_properties_last("export_scene.fbx")),
+            'filepath': bpy.path.abspath(path)
+        }
+
+        bpy.ops.export_scene.fbx(**args)
 
 
 def export_scene_obj(context, path):

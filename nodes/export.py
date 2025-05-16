@@ -31,6 +31,8 @@ class WFNodeExportFBX(WFExportNode):
     - in: One or more objects sets"""
     bl_width_default = 300
 
+    preset: bpy.props.StringProperty(default="")
+
     def execute(self, context):
         from .mixins import get_input_socket_data
         obs = get_input_socket_data(self.inputs["objects"], context)
@@ -45,7 +47,12 @@ class WFNodeExportFBX(WFExportNode):
             context.view_layer.objects.active = last_ob
 
         from ..utils import export_scene_fbx
-        export_scene_fbx(context, self.filepath)
+        export_scene_fbx(context, self.filepath, self.preset)
+
+    def draw_buttons(self, context, layout):
+        super().draw_buttons(context, layout)
+
+        layout.prop(self, "preset")
 
 
 class WFNodeExportOBJ(WFExportNode):

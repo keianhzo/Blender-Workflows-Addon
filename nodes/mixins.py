@@ -197,7 +197,7 @@ class WFExportNode(WFOutputNode, WFRunnableNode):
 
     def draw_buttons(self, context, layout):
         layout.label(text="Default export properties will be used")
-        layout.prop(self,   "filepath")
+        layout.prop(self, "filepath")
         row = layout.row()
         op = row.operator("wf.run_workflow", icon='PLAY', text="Run Workflow")
         op.node_name = self.name
