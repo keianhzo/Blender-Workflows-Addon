@@ -3,7 +3,10 @@ from .mixins import WFInputNode
 
 
 def on_scene_update(self, context):
-    pass
+    if self.target:
+        self.cached_objects = self.target.objects.values()
+    else:
+        self.cached_objects = []
 
 
 class WFNodeSceneInput(WFInputNode):
@@ -19,25 +22,37 @@ class WFNodeSceneInput(WFInputNode):
 
     def init(self, context):
         super().init(context)
-        self.target = bpy.context.scene
+        on_scene_update(self, context)
 
     def execute(self, context):
-        obs = []
-        if self.target:
-            obs = self.target.objects.values()
-
         vlc = bpy.context.view_layer.layer_collection
         from ..utils import find_object_layer_collection
-        for ob in obs:
+        on_scene_update(self, context)
+        for ob in self.cached_objects:
             lc = find_object_layer_collection(vlc, ob)
             lc.exclude = False
 
         from .mixins import set_output_socket_data
-        set_output_socket_data(self.outputs["objects"], obs, context)
+        set_output_socket_data(self.outputs["objects"], self.cached_objects, context)
+
+    def refresh(self, context):
+        on_scene_update(self, context)
+
+
+def get_collection_objects(col):
+    obs = []
+    obs.extend(col.objects.values())
+    for child in col.children:
+        obs.extend(get_collection_objects(child))
+
+    return obs
 
 
 def on_collection_update(self, context):
-    pass
+    if self.target:
+        self.cached_objects = get_collection_objects(self.target)
+    else:
+        self.cached_objects = []
 
 
 class WFNodeCollectionInput(WFInputNode):
@@ -53,33 +68,32 @@ class WFNodeCollectionInput(WFInputNode):
 
     def init(self, context):
         super().init(context)
-        self.target = bpy.data.collections[0]
+        self.cached_objects = []
+        on_collection_update(self, context)
 
     def execute(self, context):
-        obs = []
-        if self.target:
-            def get_collection_objects(col):
-                obs = []
-                obs.extend(col.objects.values())
-                for child in col.children:
-                    obs.extend(get_collection_objects(child))
-
-                return obs
-
-            obs = get_collection_objects(self.target)
-
         vlc = bpy.context.view_layer.layer_collection
         from ..utils import find_object_layer_collection
-        for ob in obs:
+        on_collection_update(self, context)
+        for ob in self.cached_objects:
             lc = find_object_layer_collection(vlc, ob)
             lc.exclude = False
 
         from .mixins import set_output_socket_data
-        set_output_socket_data(self.outputs["objects"], obs, context)
+        set_output_socket_data(self.outputs["objects"], self.cached_objects, context)
+
+    def refresh(self, context):
+        on_collection_update(self, context)
 
 
 def on_object_update(self, context):
-    pass
+    if self.target:
+        self.cached_objects = [self.target]
+        if self.children:
+            for child in self.target.children:
+                self.cached_objects.append(child)
+    else:
+        self.cached_objects = []
 
 
 def object_filter(self, ob):
@@ -102,6 +116,7 @@ class WFNodeObjectInput(WFInputNode):
 
     def init(self, context):
         super().init(context)
+        on_object_update(self, context)
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
@@ -111,14 +126,10 @@ class WFNodeObjectInput(WFInputNode):
             self.color = ERROR_COLOR
 
     def execute(self, context):
-        obs = [self.target]
-        if self.children:
-            for child in self.target.children:
-                obs.append(child)
-
         vlc = bpy.context.view_layer.layer_collection
         from ..utils import find_object_layer_collection
-        for ob in obs:
+        on_object_update(self, context)
+        for ob in self.cached_objects:
             lc = find_object_layer_collection(vlc, ob)
             if lc:
                 lc.exclude = False
@@ -126,4 +137,7 @@ class WFNodeObjectInput(WFInputNode):
                 print(f"Error: object {ob.name} doesn't have an active layer collection")
 
         from .mixins import set_output_socket_data
-        set_output_socket_data(self.outputs["objects"], obs, context)
+        set_output_socket_data(self.outputs["objects"], self.cached_objects, context)
+
+    def refresh(self, context):
+        on_object_update(self, context)

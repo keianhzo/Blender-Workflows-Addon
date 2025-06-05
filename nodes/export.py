@@ -41,6 +41,7 @@ class WFNodeExportFBX(WFExportNode):
 
         for ob in obs:
             ob.select_set(True)
+            print(f'Adding object to FBX file: {ob.name}')
 
         if obs:
             last_ob = obs[-1]

@@ -105,6 +105,9 @@ class WFNode():
         for socket in self.outputs:
             socket.wf_has_cache = False
 
+    def refresh(self, context):
+        pass
+
 
 class WFFunctionNode(Node, WFNode):
 

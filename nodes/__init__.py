@@ -3,6 +3,7 @@ from . import export, transforms, inputs, filters, debug, group, modifiers, geom
 import bpy
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
+from bpy.app.handlers import persistent
 
 
 class WFCategory(NodeCategory):
@@ -90,6 +91,17 @@ CLASSES = [
 ]
 
 
+@persistent
+def load_post(dummy):
+    from .mixins import WFNode
+    for tree in bpy.data.node_groups:
+        if tree.bl_idname == "WFNodeTree":
+            for node in tree.nodes:
+                if isinstance(node, WFNode):
+                    if hasattr(node, "refresh") and callable(getattr(node, "refresh")):
+                        node.refresh(bpy.context)
+
+
 def register():
     group.register()
 
@@ -97,6 +109,9 @@ def register():
         bpy.utils.register_class(cls)
 
     nodeitems_utils.register_node_categories("WORKFLOWS_NODES", WF_CATEGORIES)
+
+    if load_post not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(load_post)
 
 
 def unregister():
@@ -106,3 +121,6 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     group.unregister()
+
+    if load_post in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(load_post)
