@@ -14,15 +14,25 @@ class WFNodeExportGLTF(WFExportNode):
 
         bpy.ops.object.select_all(action='DESELECT')
 
-        for ob in obs:
-            ob.select_set(True)
-
-        if obs:
-            last_ob = obs[-1]
-            context.view_layer.objects.active = last_ob
-
+        import os
         from ..utils import export_scene_gltf
-        export_scene_gltf(context, self.filepath)
+        if self.all_objects:
+            for ob in obs:
+                ob.select_set(True)
+                context.view_layer.objects.active = ob
+                dir = os.path.dirname(self.filepath)
+                export_scene_gltf(context, os.path.join(dir, ob.name + ".fbx"))
+                ob.select_set(False)
+        else:
+            for ob in obs:
+                ob.select_set(True)
+
+            if obs:
+                last_ob = obs[-1]
+                context.view_layer.objects.active = last_ob
+
+            from ..utils import export_scene_gltf
+            export_scene_gltf(context, self.filepath)
 
 
 class WFNodeExportFBX(WFExportNode):
@@ -39,16 +49,24 @@ class WFNodeExportFBX(WFExportNode):
 
         bpy.ops.object.select_all(action='DESELECT')
 
-        for ob in obs:
-            ob.select_set(True)
-            print(f'Adding object to FBX file: {ob.name}')
-
-        if obs:
-            last_ob = obs[-1]
-            context.view_layer.objects.active = last_ob
-
+        import os
         from ..utils import export_scene_fbx
-        export_scene_fbx(context, self.filepath, self.preset)
+        if self.all_objects:
+            for ob in obs:
+                ob.select_set(True)
+                context.view_layer.objects.active = ob
+                dir = os.path.dirname(self.filepath)
+                export_scene_fbx(context, os.path.join(dir, ob.name + ".fbx"), self.preset)
+                ob.select_set(False)
+        else:
+            for ob in obs:
+                ob.select_set(True)
+
+            if obs:
+                last_ob = obs[-1]
+                context.view_layer.objects.active = last_ob
+
+            export_scene_fbx(context, self.filepath, self.preset)
 
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)

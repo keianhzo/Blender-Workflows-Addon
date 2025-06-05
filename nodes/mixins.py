@@ -146,6 +146,12 @@ class WFFilterNode(WFInOutFunctionNode):
 
 class WFTransformNode(WFInOutFunctionNode):
 
+    all_objects: bpy.props.BoolProperty(
+        name="All Objects",
+        description="Export all input objects using the object name as output file",
+        default=False
+    )
+
     def init(self, context):
         super().init(context)
         self.color = TRANSFORM_COLOR
@@ -194,6 +200,12 @@ class WFExportNode(WFOutputNode, WFRunnableNode):
         update=filepath_update
     )
 
+    all_objects: bpy.props.BoolProperty(
+        name="All Objects",
+        description="Export all input objects using the object name as output file",
+        default=False
+    )
+
     def init(self, context):
         super().init(context)
         self.color = ERROR_COLOR
@@ -205,6 +217,7 @@ class WFExportNode(WFOutputNode, WFRunnableNode):
         op = row.operator("wf.run_workflow", icon='PLAY', text="Run Workflow")
         op.node_name = self.name
         row.enabled = bool(self.filepath)
+        layout.prop(self, "all_objects")
 
     def update(self):
         if self.filepath:

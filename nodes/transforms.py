@@ -23,6 +23,7 @@ class WFNodeTranslateToPosition(WFTransformNode):
         col.prop(self, "position", index=0, text="X")
         col.prop(self, "position", index=1, text="Y")
         col.prop(self, "position", index=2, text="Z")
+        layout.prop(self, "all_objects")
 
     def execute(self, context):
         from .mixins import get_input_socket_data, set_output_socket_data
@@ -30,18 +31,28 @@ class WFNodeTranslateToPosition(WFTransformNode):
 
         bpy.ops.object.select_all(action='DESELECT')
 
-        for ob in obs:
-            ob.select_set(True)
-
-        if obs:
-            last_ob = obs[-1]
-
-        context.view_layer.objects.active = last_ob
-
-        if self.relative:
-            last_ob.location += self.position
+        if self.all_objects:
+            for ob in obs:
+                ob.select_set(True)
+                context.view_layer.objects.active = ob
+                if self.relative:
+                    ob.location += self.position
+                else:
+                    ob.matrix_world.translation = self.position
+                ob.select_set(False)
         else:
-            last_ob.matrix_world.translation = self.position
+            for ob in obs:
+                ob.select_set(True)
+
+            if obs:
+                last_ob = obs[-1]
+
+            context.view_layer.objects.active = last_ob
+
+            if self.relative:
+                last_ob.location += self.position
+            else:
+                last_ob.matrix_world.translation = self.position
 
         set_output_socket_data(self.outputs["objects"], obs, context)
 
@@ -60,6 +71,7 @@ class WFNodeTranslateToObjectPosition(WFTransformNode):
     def draw_buttons(self, context, layout):
         super().draw_buttons(context, layout)
         layout.prop(self, "target")
+        layout.prop(self, "all_objects")
 
     def execute(self, context):
         from .mixins import get_input_socket_data, set_output_socket_data
@@ -67,14 +79,21 @@ class WFNodeTranslateToObjectPosition(WFTransformNode):
 
         bpy.ops.object.select_all(action='DESELECT')
 
-        for ob in obs:
-            ob.select_set(True)
+        if self.all_objects:
+            for ob in obs:
+                ob.select_set(True)
+                context.view_layer.objects.active = ob
+                ob.matrix_world.translation = self.target.matrix_world.translation
+                ob.select_set(False)
+        else:
+            for ob in obs:
+                ob.select_set(True)
 
-        if obs:
-            last_ob = obs[-1]
+            if obs:
+                last_ob = obs[-1]
 
-        context.view_layer.objects.active = last_ob
+            context.view_layer.objects.active = last_ob
 
-        last_ob.matrix_world.translation = self.target.matrix_world.translation
+            last_ob.matrix_world.translation = self.target.matrix_world.translation
 
         set_output_socket_data(self.outputs["objects"], obs, context)
