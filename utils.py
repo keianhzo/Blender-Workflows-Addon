@@ -62,71 +62,75 @@ def get_prefs():
     return bpy.context.preferences.addons[__package__].preferences
 
 
-def export_scene_gltf(context, path):
-    # TODO: Add support for GLTF presets selection"
-    args = {
-        # Settings from "Remember Export Settings"
-        **dict(context.scene.get('glTF2ExportSettings', {})),
+def get_preset_args(preset_filename, preset_path):
+    preset_filepath = bpy.utils.preset_find(preset_filename, preset_path)
+    if preset_filepath:
+        class Container(object):
+            __slots__ = ('__dict__',)
 
-        'export_format': ('GLB' if path.endswith('.glb') else 'GLTF_SEPARATE'),
+        op = Container()
+        file = open(preset_filepath, 'r')
 
-        'filepath': bpy.path.abspath(path),
-        'use_selection': True,
-        'use_visible': False,
-        'use_renderable': False,
-        'use_active_collection': False,
-        'export_apply': False,
-    }
+        # storing the values from the preset on the class
+        for line in file.readlines()[3::]:
+            exec(line, globals(), locals())
+
+        # pass class dictionary to the operator
+        return op.__dict__
+
+    else:
+        raise FileNotFoundError(f'Preset not found: "{preset_filename}"')
+
+
+def export_scene_gltf(context, path, preset):
+    kwargs = {}
+
+    if preset:
+        preset_filename = "_".join(s for s in preset.split())
+        preset_path = os.path.join("operator", "export_scene.gltf")
+        kwargs = get_preset_args(preset_filename, preset_path)
+
+    else:
+        kwargs = {**dict(context.window_manager.operator_properties_last("export_scene.gltf"))}
+
+    kwargs['filepath'] = bpy.path.abspath(path)
+
     if bpy.app.version >= (3, 2, 0):
-        args['use_active_scene'] = True
+        kwargs['use_active_scene'] = True
 
-    bpy.ops.export_scene.gltf(**args)
+    bpy.ops.export_scene.gltf(**kwargs)
 
 
 def export_scene_fbx(context, path, preset):
-    filename = "_".join(s for s in preset.split())
-    preset_path = os.path.join("operator", "export_scene.fbx")
+    kwargs = {}
 
-    if preset_path:
-        filepath = bpy.utils.preset_find(filename, preset_path)
-        if filepath:
-            class Container(object):
-                __slots__ = ('__dict__',)
-
-            op = Container()
-            file = open(filepath, 'r')
-
-            # storing the values from the preset on the class
-            for line in file.readlines()[3::]:
-                exec(line, globals(), locals())
-
-            # pass class dictionary to the operator
-            op.__dict__['filepath'] = bpy.path.abspath(path)
-            kwargs = op.__dict__
-            bpy.ops.export_scene.fbx(**kwargs)
-
-        else:
-            raise FileNotFoundError(f'Preset not found: "{preset}"')
+    if preset:
+        preset_filename = "_".join(s for s in preset.split())
+        preset_path = os.path.join("operator", "export_scene.fbx")
+        kwargs = get_preset_args(preset_filename, preset_path)
 
     else:
-        args = {
-            **dict(context.window_manager.operator_properties_last("export_scene.fbx")),
-            'filepath': bpy.path.abspath(path)
-        }
+        kwargs = {**dict(context.window_manager.operator_properties_last("export_scene.fbx"))}
 
-        bpy.ops.export_scene.fbx(**args)
+    kwargs['filepath'] = bpy.path.abspath(path)
+
+    bpy.ops.export_scene.fbx(**kwargs)
 
 
-def export_scene_obj(context, path):
-    # TODO: Add support for OBJ presets selection"
-    args = {
-        **dict(context.window_manager.operator_properties_last("export_scene.obj")),
-        'filepath': bpy.path.abspath(path),
-        'export_selected_objects': True,
-        'apply_modifiers': False,
-    }
+def export_scene_obj(context, path, preset):
+    kwargs = {}
 
-    bpy.ops.wm.obj_export(**args)
+    if preset:
+        preset_filename = "_".join(s for s in preset.split())
+        preset_path = os.path.join("operator", "wm.obj_export")
+        kwargs = get_preset_args(preset_filename, preset_path)
+
+    else:
+        kwargs = {**dict(context.window_manager.operator_properties_last("wm.obj_export"))}
+
+    kwargs['filepath'] = bpy.path.abspath(path)
+
+    bpy.ops.wm.obj_export(**kwargs)
 
 
 # Function to recursively search for the LayerCollection containing the object
