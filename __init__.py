@@ -49,6 +49,8 @@ def register():
     nodes.register()
     from . import node_trees
     node_trees.register()
+    from . import operators
+    operators.register()
 
     bpy.utils.register_class(WFGlobalProps)
     bpy.types.Scene.wf_global_props = bpy.props.PointerProperty(type=WFGlobalProps)
@@ -69,6 +71,8 @@ def unregister():
     sockets.unregister()
     from . import nodes
     nodes.unregister()
+    from . import operators
+    operators.unregister()
 
     bpy.utils.unregister_class(WFGlobalProps)
     del bpy.types.Scene.wf_global_props
