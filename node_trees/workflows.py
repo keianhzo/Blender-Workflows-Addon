@@ -51,6 +51,9 @@ class RunWorkflowOperator(bpy.types.Operator):
     node_name: bpy.props.StringProperty(default="")
 
     def execute(self, context):
+        if bpy.context.mode != 'OBJECT':
+            bpy.ops.object.mode_set(mode='OBJECT')
+
         original_undo_steps = bpy.context.preferences.edit.undo_steps
         bpy.context.preferences.edit.undo_steps = 1000
         prev_global_undo = bpy.context.preferences.edit.use_global_undo
