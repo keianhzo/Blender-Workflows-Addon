@@ -14,7 +14,7 @@ class WFNodeCombineSets(WFFilterNode):
 
     def execute(self, context):
         from .mixins import get_all_input_socket_data, set_output_socket_data
-        obs = get_all_input_socket_data(self.inputs["objects"], context)
+        obs = list(set(get_all_input_socket_data(self.inputs["objects"], context)))
 
         set_output_socket_data(self.outputs["objects"], obs, context)
 
@@ -33,7 +33,7 @@ class WFNodeRemoveFromSet(WFFilterNode):
 
     def execute(self, context):
         from .mixins import get_all_input_socket_data, set_output_socket_data
-        obs = get_all_input_socket_data(self.inputs["objects"], context)
+        obs = list(set(get_all_input_socket_data(self.inputs["objects"], context)))
         excl = get_all_input_socket_data(self.inputs["exclude"], context)
         for ex_ob in excl:
             obs.remove(ex_ob)
