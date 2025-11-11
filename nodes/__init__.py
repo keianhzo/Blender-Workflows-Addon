@@ -39,6 +39,7 @@ WF_CATEGORIES = [
         NodeItem("WFNodeApplyModifierType"),
         NodeItem("WFNodeApplyModifierName"),
         NodeItem("WFNodeApplyAllModifiers"),
+        NodeItem("WFRemoveAllModifiers"),
     ]),
     WFCategory("WORKFLOWS_UV", "UV", items=[
         NodeItem("WFNodeSetActiveUVMap"),
@@ -73,6 +74,7 @@ CLASSES = [
     modifiers.WFNodeApplyModifierType,
     modifiers.WFNodeApplyModifierName,
     modifiers.WFNodeApplyAllModifiers,
+    modifiers.WFRemoveAllModifiers,
     misc.WFNodeAddPrefixToName,
     misc.WFNodeAddSuffixToName,
     geometry.WFNodeJoinObjects,

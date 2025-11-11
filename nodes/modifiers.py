@@ -96,6 +96,29 @@ Note: "Make single user" is applied on the object data before applying the modif
         set_output_socket_data(self.outputs["objects"], obs, context)
 
 
+class WFRemoveAllModifiers(WFTransformNode):
+    bl_label = "Remove All Modifiers"
+    bl_description = """Removes all modifiers an object
+    - in: One or more objects sets
+    - out: All input objects"""
+
+    def init(self, context):
+        super().init(context)
+
+    def execute(self, context):
+        from .mixins import get_input_socket_data, set_output_socket_data
+        obs = get_input_socket_data(self.inputs["objects"], context)
+
+        for ob in obs:
+            if hasattr(ob, "modifiers") and ob.modifiers:
+                for mod in ob.modifiers:
+                    ob.select_set(True)
+                    context.view_layer.objects.active = ob
+                    bpy.ops.object.modifier_remove(modifier=mod.name)
+
+        set_output_socket_data(self.outputs["objects"], obs, context)
+
+
 def string_update(self, string):
     if string:
         self.color = TRANSFORM_COLOR
