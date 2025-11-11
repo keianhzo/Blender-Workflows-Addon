@@ -8,7 +8,8 @@ class WFNodeJoinObjects(WFTransformNode):
     - name: The name to use for the joined object
     - in: One or more objects sets
     - out: The resulting object set
-Note: Only meshes are joined all other objects are ignore."""
+Note: Only meshes are joined all other objects are ignore.
+note: This applies all modifiers"""
     bl_width_default = 160
 
     def init(self, context):
@@ -33,7 +34,7 @@ Note: Only meshes are joined all other objects are ignore."""
 
         if obs:
             for ob in obs:
-                if ob.type != 'MESH':
+                if ob.type != 'MESH' and ob.type != 'EMPTY':
                     context.view_layer.objects.active = ob
                     bpy.ops.object.convert(target='MESH')
 
