@@ -96,13 +96,35 @@ def menu_func(self, context):
     self.layout.menu(VIEW3D_MT_workflows_tools_object_submenu.bl_idname)
 
 
+class WF_OT_SelectExportPath(bpy.types.Operator):
+    """Open File Browser to choose export path"""
+    bl_idname = "wf.select_export_path"
+    bl_label = "Select Export Path"
+
+    node_name: bpy.props.StringProperty()
+
+    filepath: bpy.props.StringProperty(subtype='FILE_PATH')
+
+    def execute(self, context):
+        node = context.space_data.edit_tree.nodes.get(self.node_name)
+        if node:
+            node.filepath = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def register():
     bpy.utils.register_class(OBJECT_OT_deep_merge_operator)
     bpy.utils.register_class(VIEW3D_MT_workflows_tools_object_submenu)
+    bpy.utils.register_class(WF_OT_SelectExportPath)
     bpy.types.VIEW3D_MT_object.append(menu_func)
 
 
 def unregister():
     bpy.types.VIEW3D_MT_object.remove(menu_func)
+    bpy.utils.unregister_class(WF_OT_SelectExportPath)
     bpy.utils.unregister_class(VIEW3D_MT_workflows_tools_object_submenu)
     bpy.utils.unregister_class(OBJECT_OT_deep_merge_operator)

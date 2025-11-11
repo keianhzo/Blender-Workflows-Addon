@@ -184,7 +184,7 @@ class WFRunnableNode():
 
 
 def filepath_update(self, filepath):
-    if self.filepath:
+    if filepath:
         self.color = RUNNABLE_COLOR
     else:
         self.color = ERROR_COLOR
@@ -196,13 +196,12 @@ class WFExportNode(WFOutputNode, WFRunnableNode):
         name="Output File",
         description="Choose the output file path",
         default="",
-        subtype="FILE_PATH",
         update=filepath_update
     )
 
     all_objects: bpy.props.BoolProperty(
         name="All Objects",
-        description="Export all input objects using the object name as output file",
+        description="Export all input objects individually using the object name as output file",
         default=False
     )
 
@@ -212,7 +211,9 @@ class WFExportNode(WFOutputNode, WFRunnableNode):
 
     def draw_buttons(self, context, layout):
         layout.label(text="Default export properties will be used")
-        layout.prop(self, "filepath")
+        row = layout.row(align=True)
+        row.prop(self, "filepath")
+        row.operator("wf.select_export_path", text="", icon='FILE_FOLDER').node_name = self.name
         row = layout.row()
         op = row.operator("wf.run_workflow", icon='PLAY', text="Run Workflow")
         op.node_name = self.name
